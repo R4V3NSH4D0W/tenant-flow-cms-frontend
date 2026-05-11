@@ -293,7 +293,7 @@ export function LayoutBuilderBlockBranch({
   siblingIndex: number;
   siblingCount: number;
   duplicateKey: boolean;
-  /** When `array`, child field keys are internal only (array item shape is flat). */
+  /** Parent container type, used for per-container UI behavior. */
   parentContainerType?: "array" | "object" | null;
   onRemove: (id: string) => void;
   onAddIntoContainer: (
@@ -400,7 +400,7 @@ export function LayoutBuilderBlockBranch({
       siblingIndex={siblingIndex}
       siblingCount={siblingCount}
       duplicateKey={duplicateKey}
-      hideFieldKey={parentContainerType === "array"}
+      hideFieldKey={false}
       onRemove={onRemove}
       onMoveBlock={onMoveBlock}
       onKeyChange={onKeyChange}
