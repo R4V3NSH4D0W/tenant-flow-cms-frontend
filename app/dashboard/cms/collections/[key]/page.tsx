@@ -312,7 +312,7 @@ function SortableCollectionCard({
       </CardHeader>
       <CardContent className="flex flex-1 flex-col gap-3">
         {previewImage || showImagePlaceholder ? (
-          <div className="relative h-36 w-full overflow-hidden rounded-md border bg-muted/50">
+          <div className="relative h-48 w-full overflow-hidden rounded-md border bg-muted/50">
             {previewImage ? (
               <Image
                 src={absoluteApiUrl(previewImage.url)}
@@ -334,7 +334,7 @@ function SortableCollectionCard({
             {previewRows.map((row) => (
               <div key={`${item.id}-${row.label}`} className="py-1 text-xs">
                 <span className="text-muted-foreground">{row.label}: </span>
-                <span className="line-clamp-2 align-top">{row.value}</span>
+                <span>{row.value}</span>
               </div>
             ))}
           </div>
