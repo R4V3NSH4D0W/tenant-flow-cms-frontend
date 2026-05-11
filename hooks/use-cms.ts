@@ -6,6 +6,7 @@ import {
   type CmsCollectionKey,
   type CmsCustomToolDefinition,
   type CmsCustomToolsExportPayload,
+  type CmsDynamicRouteMatchRule,
   type CmsPageCreateBody,
   type CmsPageUpdateBody,
 } from "@/lib/cms/api";
@@ -528,5 +529,102 @@ export const useDeleteCmsCollectionItem = (key: CmsCollectionKey) => {
     onError: (error: Error) => {
       toast.error(error.message || "Failed to delete collection item");
     },
+  });
+};
+
+export const useCmsDynamicRoutes = (options?: { enabled?: boolean }) => {
+  const { currentProject } = useCurrentProject();
+  const enabled = options?.enabled ?? true;
+  return useQuery({
+    queryKey: ["cms-dynamic-routes", currentProject?.slug],
+    queryFn: () => cmsApi.listDynamicRoutes(currentProject!.slug),
+    enabled: !!currentProject && enabled,
+  });
+};
+
+export const useCmsDynamicRoute = (id: string, options?: { enabled?: boolean }) => {
+  const { currentProject } = useCurrentProject();
+  const enabled = options?.enabled ?? true;
+  return useQuery({
+    queryKey: ["cms-dynamic-routes", currentProject?.slug, id],
+    queryFn: () => cmsApi.getDynamicRoute(currentProject!.slug, id),
+    enabled: !!currentProject && !!id && enabled,
+  });
+};
+
+export const useCreateCmsDynamicRoute = () => {
+  const { currentProject } = useCurrentProject();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: {
+      name: string;
+      pattern: string;
+      collectionKey: string;
+      templateLayoutId?: string | null;
+      matchRules: CmsDynamicRouteMatchRule[];
+      isActive?: boolean;
+    }) => cmsApi.createDynamicRoute(currentProject!.slug, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["cms-dynamic-routes"] });
+      toast.success("Dynamic route created");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to create dynamic route");
+    },
+  });
+};
+
+export const useUpdateCmsDynamicRoute = () => {
+  const { currentProject } = useCurrentProject();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: Partial<{
+        name: string;
+        pattern: string;
+        collectionKey: string;
+        templateLayoutId: string | null;
+        matchRules: CmsDynamicRouteMatchRule[];
+        isActive: boolean;
+      }>;
+    }) => cmsApi.updateDynamicRoute(currentProject!.slug, id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["cms-dynamic-routes"] });
+      toast.success("Dynamic route updated");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to update dynamic route");
+    },
+  });
+};
+
+export const useDeleteCmsDynamicRoute = () => {
+  const { currentProject } = useCurrentProject();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => cmsApi.deleteDynamicRoute(currentProject!.slug, id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["cms-dynamic-routes"] });
+      toast.success("Dynamic route deleted");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to delete dynamic route");
+    },
+  });
+};
+
+export const useTestCmsDynamicRoute = (path: string, options?: { enabled?: boolean }) => {
+  const { currentProject } = useCurrentProject();
+  const enabled = options?.enabled ?? true;
+  const normalizedPath = path.trim();
+  return useQuery({
+    queryKey: ["cms-dynamic-routes", "test", currentProject?.slug, normalizedPath],
+    queryFn: () => cmsApi.testDynamicRoute(currentProject!.slug, normalizedPath),
+    enabled: !!currentProject && !!normalizedPath && enabled,
+    retry: false,
   });
 };

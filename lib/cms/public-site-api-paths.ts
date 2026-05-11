@@ -27,6 +27,41 @@ export function publicCmsCollectionApiPath(key: string) {
   return `/api/v1/collections/${encodeURIComponent(key)}`;
 }
 
+/**
+ * Public resolver: `GET` with path segments after `/api/v1/dynamic-route/` (readable in the URL bar).
+ * Same behavior as {@link publicCmsDynamicRouteApiQueryPath} — still supported for older clients.
+ */
+export function publicCmsDynamicRouteApiPath(pathSegments?: string) {
+  const normalized =
+    pathSegments?.trim().replace(/^\/+/, "").replace(/\/+$/, "") || "example/segment";
+  const encoded = normalized
+    .split("/")
+    .filter(Boolean)
+    .map((seg) => encodeURIComponent(seg))
+    .join("/");
+  return `/api/v1/dynamic-route/${encoded}`;
+}
+
+/**
+ * Same resolver using `?path=` (nested paths stay in one query value). The API implements both.
+ */
+export function publicCmsDynamicRouteApiQueryPath(pathSegments?: string) {
+  const p =
+    pathSegments?.trim().replace(/^\/+/, "").replace(/\/+$/, "") || "example/segment";
+  return `/api/v1/dynamic-route?path=${encodeURIComponent(p)}`;
+}
+
+/** Build a sample `path=` value from a route pattern by substituting static segments and using "example" for each `:param`. */
+export function examplePathForDynamicRoutePattern(pattern: string): string {
+  const trimmed = pattern.trim().replace(/^\/+/, "").replace(/\/+$/, "");
+  if (!trimmed) return "example-segment";
+  return trimmed
+    .split("/")
+    .filter(Boolean)
+    .map((seg) => (seg.startsWith(":") ? "example" : seg))
+    .join("/");
+}
+
 /** Short label for long API paths (middle ellipsis). */
 export function trimPublicApiPathDisplay(path: string, max = 42): string {
   const t = path.trim();

@@ -32,6 +32,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { LayoutConfigForm } from "@/components/cms/layout-config-form";
+import { CollectionPublicApiHelper } from "@/components/cms/collection-public-api-helper";
 import { useCurrentProject } from "@/components/providers/current-project-provider";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -54,14 +55,13 @@ import {
   useDeleteCmsCollectionItem,
   useUpdateCmsCollectionItem,
 } from "@/hooks/use-cms";
-import { absoluteApiUrl, absoluteTenantApiUrl } from "@/lib/cms/absolute-url";
+import { absoluteApiUrl } from "@/lib/cms/absolute-url";
 import { type CmsCollectionItem, cmsApi } from "@/lib/cms/api";
 import {
   findCollectionItemPreviewImage,
   titleFromImageUrl,
   type CmsCollectionItemPreviewImage,
 } from "@/lib/cms/collection-item-image";
-import { publicCmsCollectionApiPath } from "@/lib/cms/public-site-api-paths";
 import { parseFieldDefs, type LayoutFieldDef } from "@/lib/cms/layout-payload";
 
 type CollectionItemStatusFilter =
@@ -426,11 +426,6 @@ export default function CmsCollectionItemsPage() {
   const [published, setPublished] = useState(true);
   const [active, setActive] = useState(true);
   const editorCardRef = useRef<HTMLDivElement | null>(null);
-  const publicApiPath = publicCmsCollectionApiPath(collectionKey);
-  const publicApiUrl = absoluteTenantApiUrl(publicApiPath, {
-    slug: currentProject?.slug,
-    primaryDomain: currentProject?.primaryDomain,
-  });
   const hasMore = Boolean(data?.pagination?.hasMore);
   const isFirstPage = page === 0;
 
@@ -649,10 +644,6 @@ export default function CmsCollectionItemsPage() {
           <p className="text-sm text-muted-foreground">
             Manage reusable records for this collection.
           </p>
-          <div className="mt-2 rounded-md border bg-muted/30 p-3 font-mono text-xs">
-            <p className="font-sans text-xs text-muted-foreground">Public API</p>
-            <p>{publicApiUrl}?limit=10&amp;offset=0</p>
-          </div>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" asChild>
@@ -668,6 +659,12 @@ export default function CmsCollectionItemsPage() {
           </Button>
         </div>
       </div>
+
+      <CollectionPublicApiHelper
+        collectionKey={collectionKey}
+        projectSlug={currentProject?.slug}
+        tenantDomain={currentProject?.primaryDomain}
+      />
 
       <Card ref={editorCardRef}>
         <CardHeader>

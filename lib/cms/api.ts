@@ -1,6 +1,7 @@
 import { api } from "@/lib/fetcher";
 import {
   publicCmsAnnouncementsApiPath,
+  publicCmsDynamicRouteApiPath,
   publicCmsFooterApiPath,
   publicCmsNavigationApiPath,
 } from "@/lib/cms/public-site-api-paths";
@@ -189,6 +190,58 @@ export interface CmsCollectionItemsResponse {
 export interface CmsCollectionItemResponse {
   success: boolean;
   item: CmsCollectionItem;
+}
+
+/** Public GET /api/v1/collections/:key when `?slug=` only, or `?field.id=` only (detail). */
+export interface CmsPublicCollectionDetailResponse {
+  success: true;
+  key: string;
+  item: CmsCollectionItem;
+}
+
+/** Public GET /api/v1/collections/:key for listing / multi-filter search. */
+export interface CmsPublicCollectionListResponse {
+  success: true;
+  key: string;
+  data: CmsCollectionItem[];
+  pagination?: {
+    limit: number;
+    offset: number;
+    hasMore: boolean;
+  };
+}
+
+export type CmsPublicCollectionGetResponse =
+  | CmsPublicCollectionDetailResponse
+  | CmsPublicCollectionListResponse;
+
+export interface CmsDynamicRouteMatchRule {
+  param: string;
+  fieldPath: string;
+  kind?: "field" | "ref";
+}
+
+export interface CmsDynamicRoute {
+  id: string;
+  projectId: string;
+  name: string;
+  pattern: string;
+  collectionKey: string;
+  templateLayoutId: string | null;
+  matchRules: CmsDynamicRouteMatchRule[];
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CmsDynamicRoutesResponse {
+  success: boolean;
+  routes: CmsDynamicRoute[];
+}
+
+export interface CmsDynamicRouteResponse {
+  success: boolean;
+  route: CmsDynamicRoute;
 }
 
 export interface CmsCustomTool {
@@ -615,18 +668,117 @@ export const cmsApi = {
       sort?: "displayOrderAsc" | "updatedAtDesc" | "createdAtDesc";
       tag?: string;
       locale?: string;
+      slug?: string;
+      fieldFilters?: Record<string, string>;
+      refFilters?: Record<string, string>;
     }
   ) =>
-    api.get<{
-      success: boolean;
-      key: string;
-      items: CmsCollectionItem[];
-      pagination?: { limit: number; offset: number; hasMore: boolean };
-    }>(
+    api.get<CmsPublicCollectionGetResponse>(
       `/api/v1/collections/${key}`,
       {
         headers: { "x-tenant-slug": projectSlug },
-        params,
+        params: params
+          ? (() => {
+              const { fieldFilters, refFilters, ...rest } = params;
+              return {
+                ...rest,
+                ...(fieldFilters
+                  ? Object.fromEntries(
+                      Object.entries(fieldFilters).map(([k, v]) => [
+                        `field.${k}`,
+                        v,
+                      ]),
+                    )
+                  : {}),
+                ...(refFilters
+                  ? Object.fromEntries(
+                      Object.entries(refFilters).map(([k, v]) => [
+                        `ref.${k}`,
+                        v,
+                      ]),
+                    )
+                  : {}),
+              };
+            })()
+          : undefined,
       }
     ),
+
+  listDynamicRoutes: (projectSlug: string) =>
+    api.get<CmsDynamicRoutesResponse>(
+      `/api/v1/admin/projects/${projectSlug}/cms/dynamic-routes`,
+    ),
+
+  getDynamicRoute: (projectSlug: string, id: string) =>
+    api.get<CmsDynamicRouteResponse>(
+      `/api/v1/admin/projects/${projectSlug}/cms/dynamic-routes/${id}`,
+    ),
+
+  createDynamicRoute: (
+    projectSlug: string,
+    data: {
+      name: string;
+      pattern: string;
+      collectionKey: string;
+      templateLayoutId?: string | null;
+      matchRules: CmsDynamicRouteMatchRule[];
+      isActive?: boolean;
+    },
+  ) =>
+    api.post<CmsDynamicRouteResponse>(
+      `/api/v1/admin/projects/${projectSlug}/cms/dynamic-routes`,
+      data,
+    ),
+
+  updateDynamicRoute: (
+    projectSlug: string,
+    id: string,
+    data: Partial<{
+      name: string;
+      pattern: string;
+      collectionKey: string;
+      templateLayoutId: string | null;
+      matchRules: CmsDynamicRouteMatchRule[];
+      isActive: boolean;
+    }>,
+  ) =>
+    api.patch<CmsDynamicRouteResponse>(
+      `/api/v1/admin/projects/${projectSlug}/cms/dynamic-routes/${id}`,
+      data,
+    ),
+
+  deleteDynamicRoute: (projectSlug: string, id: string) =>
+    api.delete<{ success: boolean; message?: string }>(
+      `/api/v1/admin/projects/${projectSlug}/cms/dynamic-routes/${id}`,
+    ),
+
+  testDynamicRoute: (projectSlug: string, path: string) =>
+    api.get<{
+      success: boolean;
+      route: CmsDynamicRoute;
+      params: Record<string, string>;
+      item: Record<string, unknown>;
+      layout: Record<string, unknown> | null;
+    }>(
+      `/api/v1/admin/projects/${projectSlug}/cms/dynamic-routes-resolve`,
+      { params: { path } },
+    ),
+
+  resolvePublicDynamicRoute: (
+    projectSlug: string,
+    path: string,
+    params?: { flatten?: boolean },
+  ) => {
+    const base = publicCmsDynamicRouteApiPath(path);
+    const qs = params?.flatten === false ? "?flatten=false" : "";
+    return api.get<{
+      success: boolean;
+      route: CmsDynamicRoute;
+      params: Record<string, string>;
+      item: Record<string, unknown>;
+      layout: Record<string, unknown> | null;
+    }>(`${base}${qs}`, {
+      headers: { "x-tenant-slug": projectSlug },
+    });
+  },
 };

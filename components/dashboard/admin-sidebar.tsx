@@ -14,6 +14,7 @@ import {
   Images,
   Hammer,
   FolderKanban,
+  Route,
   ShieldCheck,
   Users,
   Settings,
@@ -79,6 +80,11 @@ const cmsNav: NavItem[] = [
     href: "/dashboard/cms/collections",
     label: "Collections",
     icon: Database,
+  },
+  {
+    href: "/dashboard/cms/dynamic-routes",
+    label: "Dynamic Routes",
+    icon: Route,
   },
   {
     href: "/dashboard/cms/navigation",
