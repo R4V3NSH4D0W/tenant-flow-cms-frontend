@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   DndContext,
   PointerSensor,
@@ -70,6 +70,22 @@ type CollectionItemStatusFilter =
   | "draft"
   | "active"
   | "inactive";
+
+function nearestScrollableAncestor(element: HTMLElement): HTMLElement | null {
+  let current = element.parentElement;
+  while (current) {
+    const style = window.getComputedStyle(current);
+    const overflowY = style.overflowY;
+    if (
+      (overflowY === "auto" || overflowY === "scroll") &&
+      current.scrollHeight > current.clientHeight
+    ) {
+      return current;
+    }
+    current = current.parentElement;
+  }
+  return null;
+}
 
 function defaultLeafValue(def: LayoutFieldDef): unknown {
   if (def.default !== undefined) return def.default;
@@ -409,6 +425,7 @@ export default function CmsCollectionItemsPage() {
   const [payloadValue, setPayloadValue] = useState<Record<string, unknown>>({});
   const [published, setPublished] = useState(true);
   const [active, setActive] = useState(true);
+  const editorCardRef = useRef<HTMLDivElement | null>(null);
   const publicApiPath = publicCmsCollectionApiPath(collectionKey);
   const publicApiUrl = absoluteTenantApiUrl(publicApiPath, {
     slug: currentProject?.slug,
@@ -440,13 +457,38 @@ export default function CmsCollectionItemsPage() {
     setEditorOpen(false);
   }
 
+  function revealEditor() {
+    setEditorOpen(true);
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const target = editorCardRef.current;
+        if (!target) return;
+        const scrollParent = nearestScrollableAncestor(target);
+        const offset = 16;
+        if (scrollParent) {
+          const parentBox = scrollParent.getBoundingClientRect();
+          const targetBox = target.getBoundingClientRect();
+          const top =
+            scrollParent.scrollTop + (targetBox.top - parentBox.top) - offset;
+          scrollParent.scrollTo({
+            top: Math.max(top, 0),
+            behavior: "smooth",
+          });
+          return;
+        }
+        const top = window.scrollY + target.getBoundingClientRect().top - offset;
+        window.scrollTo({ top: Math.max(top, 0), behavior: "smooth" });
+      });
+    });
+  }
+
   function startNewItem() {
     setEditingId(null);
     setPayloadText("{}");
     setPayloadValue(schemaDefaults);
     setPublished(true);
     setActive(true);
-    setEditorOpen(true);
+    revealEditor();
   }
 
   function loadItemForEdit(item: (typeof items)[number]) {
@@ -456,7 +498,7 @@ export default function CmsCollectionItemsPage() {
     setPayloadValue(payload);
     setPublished(item.published);
     setActive(item.isActive);
-    setEditorOpen(true);
+    revealEditor();
   }
 
   function parsePayloadOrThrow() {
@@ -627,7 +669,7 @@ export default function CmsCollectionItemsPage() {
         </div>
       </div>
 
-      <Card>
+      <Card ref={editorCardRef}>
         <CardHeader>
           <div className="flex items-center justify-between gap-2">
             <CardTitle className="text-base">

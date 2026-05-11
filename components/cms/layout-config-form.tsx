@@ -1271,7 +1271,15 @@ function FieldRow({
               {visibleItems.map((item) => {
                 const checked = selectedMany.includes(item.id);
                 return (
-                  <div key={item.id} className="flex items-start gap-3">
+                  <div
+                    key={item.id}
+                    className={cn(
+                      "flex items-start gap-3 rounded-md border p-2 transition-colors",
+                      checked
+                        ? "border-primary/40 bg-primary/5"
+                        : "border-border/70 bg-muted/30 hover:bg-muted/50",
+                    )}
+                  >
                     <Checkbox
                       id={`${fid}-${item.id}`}
                       className="mt-3"
