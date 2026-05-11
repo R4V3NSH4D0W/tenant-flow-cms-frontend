@@ -463,9 +463,15 @@ export const cmsApi = {
       data
     ),
 
-  listCollections: (projectSlug: string) =>
+  listCollections: (
+    projectSlug: string,
+    params?: {
+      q?: string;
+    }
+  ) =>
     api.get<CmsCollectionsResponse>(
-      `/api/v1/admin/projects/${projectSlug}/cms/collections`
+      `/api/v1/admin/projects/${projectSlug}/cms/collections`,
+      { params }
     ),
 
   upsertCollection: (

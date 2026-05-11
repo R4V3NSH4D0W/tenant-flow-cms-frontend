@@ -73,7 +73,6 @@ function blockToSchemaNode(block: SectionBlock): Record<string, unknown> {
       key: block.key.trim(),
       collectionKey: block.collectionKey?.trim() || "",
       multiple: block.multiple !== false,
-      ...(block.defaultStr ? { default: block.defaultStr } : {}),
       ...(block.required ? { required: true } : {}),
     };
   }

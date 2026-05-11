@@ -20,14 +20,30 @@ import Image from "next/image";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
-import { GripVertical, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronUp,
+  GripVertical,
+  Loader2,
+  Pencil,
+  Plus,
+  Trash2,
+} from "lucide-react";
 import { toast } from "sonner";
 import { LayoutConfigForm } from "@/components/cms/layout-config-form";
 import { useCurrentProject } from "@/components/providers/current-project-provider";
-import { AlertDialog } from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -46,6 +62,13 @@ import {
 } from "@/lib/cms/collection-item-image";
 import { publicCmsCollectionApiPath } from "@/lib/cms/public-site-api-paths";
 import { parseFieldDefs, type LayoutFieldDef } from "@/lib/cms/layout-payload";
+
+type CollectionItemStatusFilter =
+  | "all"
+  | "published"
+  | "draft"
+  | "active"
+  | "inactive";
 
 function defaultLeafValue(def: LayoutFieldDef): unknown {
   if (def.default !== undefined) return def.default;
@@ -180,6 +203,41 @@ function buildPreviewRows(
   return rows;
 }
 
+function itemMatchesSearch(
+  item: CmsCollectionItem,
+  previewRows: Array<{ label: string; value: string }>,
+  query: string,
+): boolean {
+  const q = query.trim().toLowerCase();
+  if (!q) return true;
+  const previewText = previewRows
+    .map((row) => `${row.label} ${row.value}`)
+    .join(" ")
+    .toLowerCase();
+  return [item.title, item.slug ?? "", item.id, previewText].some((value) =>
+    value.toLowerCase().includes(q),
+  );
+}
+
+function itemMatchesStatusFilter(
+  item: CmsCollectionItem,
+  filter: CollectionItemStatusFilter,
+): boolean {
+  switch (filter) {
+    case "published":
+      return item.published;
+    case "draft":
+      return !item.published;
+    case "active":
+      return item.isActive;
+    case "inactive":
+      return !item.isActive;
+    case "all":
+    default:
+      return true;
+  }
+}
+
 function SortableCollectionCard({
   item,
   previewImage,
@@ -187,6 +245,7 @@ function SortableCollectionCard({
   onEdit,
   onDelete,
   isBusy,
+  canReorder,
 }: {
   item: CmsCollectionItem;
   previewImage: CmsCollectionItemPreviewImage | null;
@@ -194,6 +253,7 @@ function SortableCollectionCard({
   onEdit: () => void;
   onDelete: () => void;
   isBusy: boolean;
+  canReorder: boolean;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: item.id });
@@ -214,13 +274,22 @@ function SortableCollectionCard({
           <CardTitle className="text-sm">{item.title}</CardTitle>
           <button
             type="button"
-            className="cursor-grab rounded p-1 text-muted-foreground hover:bg-muted"
+            className="cursor-grab rounded p-1 text-muted-foreground hover:bg-muted disabled:cursor-default disabled:opacity-40"
             aria-label="Drag to reorder item"
+            disabled={!canReorder}
             {...attributes}
             {...listeners}
           >
             <GripVertical className="h-4 w-4" />
           </button>
+        </div>
+        <div className="flex flex-wrap gap-1">
+          <Badge variant={item.published ? "default" : "secondary"}>
+            {item.published ? "Published" : "Draft"}
+          </Badge>
+          <Badge variant={item.isActive ? "default" : "secondary"}>
+            {item.isActive ? "Active" : "Inactive"}
+          </Badge>
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -268,8 +337,9 @@ export default function CmsCollectionItemsPage() {
   const queryClient = useQueryClient();
   const { currentProject } = useCurrentProject();
   const { data: defsRes } = useCmsCollections();
-  const pageSize = 50;
-  const offset = 0;
+  const pageSize = 24;
+  const [page, setPage] = useState(0);
+  const offset = page * pageSize;
 
   const { data, isLoading } = useCmsCollectionItems(collectionKey, {
     includeInactive: true,
@@ -304,11 +374,12 @@ export default function CmsCollectionItemsPage() {
   const [isReordering, setIsReordering] = useState(false);
   const [orderedItems, setOrderedItems] = useState<CmsCollectionItem[]>([]);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] =
+    useState<CollectionItemStatusFilter>("all");
+  const [editorOpen, setEditorOpen] = useState(false);
 
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<CmsCollectionItem | null>(
-    null,
-  );
   const [payloadText, setPayloadText] = useState("{}");
   const [payloadValue, setPayloadValue] = useState<Record<string, unknown>>({});
   const [published, setPublished] = useState(true);
@@ -318,12 +389,18 @@ export default function CmsCollectionItemsPage() {
     slug: currentProject?.slug,
     primaryDomain: currentProject?.primaryDomain,
   });
+  const hasMore = Boolean(data?.pagination?.hasMore);
+  const isFirstPage = page === 0;
 
   useEffect(() => {
     if (!editingId) {
       setPayloadValue(schemaDefaults);
     }
   }, [editingId, schemaDefaults]);
+
+  useEffect(() => {
+    setPage(0);
+  }, [collectionKey]);
 
   useEffect(() => {
     setOrderedItems(items);
@@ -335,6 +412,16 @@ export default function CmsCollectionItemsPage() {
     setPayloadValue(schemaDefaults);
     setPublished(true);
     setActive(true);
+    setEditorOpen(false);
+  }
+
+  function startNewItem() {
+    setEditingId(null);
+    setPayloadText("{}");
+    setPayloadValue(schemaDefaults);
+    setPublished(true);
+    setActive(true);
+    setEditorOpen(true);
   }
 
   function loadItemForEdit(item: (typeof items)[number]) {
@@ -344,6 +431,7 @@ export default function CmsCollectionItemsPage() {
     setPayloadValue(payload);
     setPublished(item.published);
     setActive(item.isActive);
+    setEditorOpen(true);
   }
 
   function parsePayloadOrThrow() {
@@ -381,7 +469,8 @@ export default function CmsCollectionItemsPage() {
           isActive: active,
         },
       });
-      resetForm();
+      setEditorOpen(false);
+      setEditingId(null);
       return;
     }
 
@@ -391,8 +480,44 @@ export default function CmsCollectionItemsPage() {
       published,
       isActive: active,
     });
-    resetForm();
+    setEditingId(null);
+    setPayloadValue(schemaDefaults);
+    setPublished(true);
+    setActive(true);
   }
+
+  const previewById = useMemo(() => {
+    const map = new Map<
+      string,
+      {
+        previewRows: Array<{ label: string; value: string }>;
+        previewImage: CmsCollectionItemPreviewImage | null;
+      }
+    >();
+    for (const item of orderedItems) {
+      const payload =
+        item.payload && typeof item.payload === "object" && !Array.isArray(item.payload)
+          ? (item.payload as Record<string, unknown>)
+          : {};
+      map.set(item.id, {
+        previewRows: buildPreviewRows(schemaDefs, payload),
+        previewImage: findCollectionItemPreviewImage(payload),
+      });
+    }
+    return map;
+  }, [orderedItems, schemaDefs]);
+
+  const filteredItems = useMemo(
+    () =>
+      orderedItems.filter((item) => {
+        if (!itemMatchesStatusFilter(item, statusFilter)) return false;
+        const preview = previewById.get(item.id);
+        return itemMatchesSearch(item, preview?.previewRows ?? [], search);
+      }),
+    [orderedItems, statusFilter, previewById, search],
+  );
+
+  const canReorder = statusFilter === "all" && search.trim() === "";
 
   async function persistOrder(nextItems: CmsCollectionItem[]) {
     if (!currentProject) return;
@@ -418,6 +543,7 @@ export default function CmsCollectionItemsPage() {
   }
 
   function handleDragEnd(event: DragEndEvent) {
+    if (!canReorder) return;
     const { active, over } = event;
     if (!over || active.id === over.id) return;
     const oldIndex = orderedItems.findIndex((item) => item.id === String(active.id));
@@ -428,155 +554,273 @@ export default function CmsCollectionItemsPage() {
     void persistOrder(next);
   }
 
+  async function handleDeleteItem(item: CmsCollectionItem) {
+    await deleteItem.mutateAsync(item.id);
+    setOrderedItems((prev) => prev.filter((row) => row.id !== item.id));
+    if (editingId === item.id) {
+      setEditingId(null);
+      setEditorOpen(false);
+      setPayloadValue(schemaDefaults);
+      setPublished(true);
+      setActive(true);
+    }
+  }
+
   return (
     <div className="flex w-full flex-col gap-6 px-4 pb-10 sm:px-6 lg:px-8">
-      <AlertDialog
-        open={deleteTarget !== null}
-        title={
-          deleteTarget
-            ? `Delete collection item "${deleteTarget.title}"?`
-            : "Delete collection item?"
-        }
-        description="This removes the item from the collection API and CMS item list."
-        confirmLabel="Delete item"
-        confirmationText={deleteTarget?.title}
-        confirmationLabel="Type the item title to confirm."
-        destructive
-        onOpenChange={(open) => {
-          if (!open) setDeleteTarget(null);
-        }}
-        onConfirm={
-          deleteTarget
-            ? async () => {
-                await deleteItem.mutateAsync(deleteTarget.id);
-                setDeleteTarget(null);
-              }
-            : undefined
-        }
-      />
       <Button variant="ghost" size="sm" className="w-fit px-0" asChild>
         <Link href="/dashboard/cms/collections">← All collections</Link>
       </Button>
 
-      <div className="space-y-1">
-        <h1 className="text-2xl font-bold tracking-tight">Collection: {collectionKey}</h1>
-        <p className="text-sm text-muted-foreground">
-          Add and manage data entries inside this collection.
-        </p>
-        <div className="mt-2 rounded-md border bg-muted/30 p-3 font-mono text-xs">
-          <p className="font-sans text-xs text-muted-foreground">Public API</p>
-          <p>{publicApiUrl}?limit=10&amp;offset=0</p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="space-y-1">
+          <h1 className="text-2xl font-bold tracking-tight">
+            Collection: {collectionKey}
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Manage reusable records for this collection.
+          </p>
+          <div className="mt-2 rounded-md border bg-muted/30 p-3 font-mono text-xs">
+            <p className="font-sans text-xs text-muted-foreground">Public API</p>
+            <p>{publicApiUrl}?limit=10&amp;offset=0</p>
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" asChild>
+            <Link
+              href={`/dashboard/cms/collections/builder?key=${encodeURIComponent(collectionKey)}`}
+            >
+              Edit schema
+            </Link>
+          </Button>
+          <Button onClick={startNewItem}>
+            <Plus className="mr-2 h-4 w-4" />
+            New item
+          </Button>
         </div>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">{editingId ? "Edit item" : "New item"}</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-1 md:col-span-2">
-              <Label>
-                {useVisualSchemaForm ? "Collection fields" : "Payload (JSON object)"}
-              </Label>
-              {useVisualSchemaForm ? (
-                <div className="rounded-md border p-3">
-                  <LayoutConfigForm
-                    rootKey="item"
-                    defs={schemaDefs}
-                    value={{ item: payloadValue }}
-                    onChange={(next) => {
-                      const itemValue = next.item;
-                      if (
-                        itemValue &&
-                        typeof itemValue === "object" &&
-                        !Array.isArray(itemValue)
-                      ) {
-                        setPayloadValue(itemValue as Record<string, unknown>);
-                      } else {
-                        setPayloadValue({});
-                      }
-                    }}
-                    showRootKeyHint={false}
-                  />
-                </div>
-              ) : (
-                <Textarea
-                  value={payloadText}
-                  onChange={(e) => setPayloadText(e.target.value)}
-                  rows={8}
-                  className="font-mono text-xs"
-                />
-              )}
-            </div>
-            <div className="flex items-center gap-2 pt-6">
-              <Switch checked={published} onCheckedChange={setPublished} />
-              <span className="text-sm text-muted-foreground">Published</span>
-            </div>
-            <div className="flex items-center gap-2 pt-6">
-              <Switch checked={active} onCheckedChange={setActive} />
-              <span className="text-sm text-muted-foreground">Active</span>
-            </div>
-          </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex items-center justify-between gap-2">
+            <CardTitle className="text-base">
+              {editingId ? "Edit item" : "Create item"}
+            </CardTitle>
             <Button
               type="button"
-              onClick={() => void handleSave()}
-              disabled={createItem.isPending || updateItem.isPending}
+              variant="ghost"
+              size="sm"
+              onClick={() => setEditorOpen((prev) => !prev)}
             >
-              {createItem.isPending || updateItem.isPending ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              {editorOpen ? (
+                <ChevronUp className="mr-1 h-4 w-4" />
               ) : (
-                <Plus className="mr-2 h-4 w-4" />
+                <ChevronDown className="mr-1 h-4 w-4" />
               )}
-              {editingId ? "Save changes" : "Create item"}
+              {editorOpen ? "Hide form" : "Show form"}
             </Button>
-            {editingId ? (
-              <Button type="button" variant="outline" onClick={resetForm}>
-                Cancel edit
-              </Button>
-            ) : null}
           </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {editorOpen ? (
+            <>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-1 md:col-span-2">
+                  <Label>
+                    {useVisualSchemaForm
+                      ? "Collection fields"
+                      : "Payload (JSON object)"}
+                  </Label>
+                  {useVisualSchemaForm ? (
+                    <div className="rounded-md border p-3">
+                      <LayoutConfigForm
+                        rootKey="item"
+                        defs={schemaDefs}
+                        value={{ item: payloadValue }}
+                        onChange={(next) => {
+                          const itemValue = next.item;
+                          if (
+                            itemValue &&
+                            typeof itemValue === "object" &&
+                            !Array.isArray(itemValue)
+                          ) {
+                            setPayloadValue(itemValue as Record<string, unknown>);
+                          } else {
+                            setPayloadValue({});
+                          }
+                        }}
+                        showRootKeyHint={false}
+                      />
+                    </div>
+                  ) : (
+                    <Textarea
+                      value={payloadText}
+                      onChange={(e) => setPayloadText(e.target.value)}
+                      rows={8}
+                      className="font-mono text-xs"
+                    />
+                  )}
+                </div>
+                <div className="flex items-center gap-2 pt-6">
+                  <Switch checked={published} onCheckedChange={setPublished} />
+                  <span className="text-sm text-muted-foreground">Published</span>
+                </div>
+                <div className="flex items-center gap-2 pt-6">
+                  <Switch checked={active} onCheckedChange={setActive} />
+                  <span className="text-sm text-muted-foreground">Active</span>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  onClick={() => void handleSave()}
+                  disabled={createItem.isPending || updateItem.isPending}
+                >
+                  {createItem.isPending || updateItem.isPending ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Plus className="mr-2 h-4 w-4" />
+                  )}
+                  {editingId ? "Save changes" : "Create item"}
+                </Button>
+                <Button type="button" variant="outline" onClick={resetForm}>
+                  {editingId ? "Cancel edit" : "Close form"}
+                </Button>
+              </div>
+            </>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              Form hidden to keep browsing focused. Use{" "}
+              <span className="font-medium">New item</span> or{" "}
+              <span className="font-medium">Edit</span> to open it.
+            </p>
+          )}
         </CardContent>
       </Card>
 
       <div className="space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-muted/20 p-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <Input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Search by title, slug, id, or preview text"
+              className="w-[280px] max-w-full bg-background"
+            />
+            <Select
+              value={statusFilter}
+              onValueChange={(value) =>
+                setStatusFilter(value as CollectionItemStatusFilter)
+              }
+            >
+              <SelectTrigger className="w-[170px] bg-background">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All statuses</SelectItem>
+                <SelectItem value="published">Published</SelectItem>
+                <SelectItem value="draft">Draft</SelectItem>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="inactive">Inactive</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <span>
+              Showing {filteredItems.length} of {orderedItems.length} item(s) on
+              page {page + 1}
+            </span>
+            {!canReorder ? (
+              <Badge variant="secondary">Reorder disabled while filtering</Badge>
+            ) : null}
+          </div>
+        </div>
+
         {isLoading ? (
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" />
             Loading items…
           </div>
-        ) : items.length === 0 ? (
+        ) : orderedItems.length === 0 ? (
           <p className="text-sm text-muted-foreground">No collection items yet.</p>
+        ) : filteredItems.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            No items match your current search/filter on this page.
+          </p>
         ) : (
           <div className="rounded-lg border bg-muted/20 p-3">
-            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-              <SortableContext items={orderedItems.map((item) => item.id)} strategy={rectSortingStrategy}>
-                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                  {orderedItems.map((item) => {
-            const payload =
-              item.payload && typeof item.payload === "object" && !Array.isArray(item.payload)
-                ? (item.payload as Record<string, unknown>)
-                : {};
-            const previewRows = buildPreviewRows(schemaDefs, payload);
-            const previewImage = findCollectionItemPreviewImage(payload);
-            return (
-              <SortableCollectionCard
-                key={item.id}
-                item={item}
-                previewImage={previewImage}
-                previewRows={previewRows}
-                onEdit={() => loadItemForEdit(item)}
-                onDelete={() => setDeleteTarget(item)}
-                isBusy={isReordering || deleteItem.isPending}
-              />
-            );
-          })}
-                </div>
-              </SortableContext>
-            </DndContext>
+            {canReorder ? (
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}
+              >
+                <SortableContext
+                  items={filteredItems.map((item) => item.id)}
+                  strategy={rectSortingStrategy}
+                >
+                  <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                    {filteredItems.map((item) => {
+                      const preview = previewById.get(item.id);
+                      return (
+                        <SortableCollectionCard
+                          key={item.id}
+                          item={item}
+                          previewImage={preview?.previewImage ?? null}
+                          previewRows={preview?.previewRows ?? []}
+                          onEdit={() => loadItemForEdit(item)}
+                          onDelete={() => void handleDeleteItem(item)}
+                          isBusy={isReordering || deleteItem.isPending}
+                          canReorder
+                        />
+                      );
+                    })}
+                  </div>
+                </SortableContext>
+              </DndContext>
+            ) : (
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                {filteredItems.map((item) => {
+                  const preview = previewById.get(item.id);
+                  return (
+                    <SortableCollectionCard
+                      key={item.id}
+                      item={item}
+                      previewImage={preview?.previewImage ?? null}
+                      previewRows={preview?.previewRows ?? []}
+                      onEdit={() => loadItemForEdit(item)}
+                      onDelete={() => void handleDeleteItem(item)}
+                      isBusy={deleteItem.isPending}
+                      canReorder={false}
+                    />
+                  );
+                })}
+              </div>
+            )}
           </div>
         )}
+
+        <div className="flex items-center justify-end gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setPage((prev) => Math.max(prev - 1, 0))}
+            disabled={isFirstPage || isLoading}
+          >
+            Previous page
+          </Button>
+          <span className="text-xs text-muted-foreground">Page {page + 1}</span>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setPage((prev) => prev + 1)}
+            disabled={!hasMore || isLoading}
+          >
+            Next page
+          </Button>
+        </div>
       </div>
     </div>
   );

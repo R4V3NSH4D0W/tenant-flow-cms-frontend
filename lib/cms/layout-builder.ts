@@ -395,7 +395,10 @@ function instantiateTemplateNode(
       href: template.defaultLink?.href ?? "",
       target: template.defaultLink?.target ?? "_self",
     };
-  } else if (template.defaultStr !== undefined) {
+  } else if (
+    template.type !== "collection_ref" &&
+    template.defaultStr !== undefined
+  ) {
     block.defaultStr = template.defaultStr;
   }
   if (template.type === "collection_ref") {
@@ -529,7 +532,7 @@ export function updateBlockDefault(
   return blocks.map((b) => {
     if (b.id === id) {
       if (isContainer(b.type)) return b;
-      if (b.type === "link") return b;
+      if (b.type === "link" || b.type === "collection_ref") return b;
       return {
         ...b,
         defaultStr:
@@ -755,8 +758,6 @@ function blockToExportJson(block: SectionBlock): Record<string, unknown> {
       collectionKey: block.collectionKey?.trim() || "testimonials",
       multiple: block.multiple !== false,
     };
-    const d = leafDefaultToExport(block.type, block.defaultStr);
-    if (d !== undefined) out.default = d;
     if (block.required) out.required = true;
     return out;
   }

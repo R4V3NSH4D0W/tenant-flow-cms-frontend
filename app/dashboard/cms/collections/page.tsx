@@ -7,6 +7,7 @@ import { useCurrentProject } from "@/components/providers/current-project-provid
 import { AlertDialog } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { useCmsCollections, useDeleteCmsCollection } from "@/hooks/use-cms";
 import type { CmsCollectionDefinition } from "@/lib/cms/api";
 import { absoluteTenantApiUrl } from "@/lib/cms/absolute-url";
@@ -17,9 +18,10 @@ import {
 
 export default function CmsCollectionsPage() {
   const { currentProject } = useCurrentProject();
+  const [search, setSearch] = useState("");
   const [deleteTarget, setDeleteTarget] =
     useState<CmsCollectionDefinition | null>(null);
-  const { data: defsRes, isLoading } = useCmsCollections();
+  const { data: defsRes, isLoading } = useCmsCollections({ q: search });
   const deleteCollection = useDeleteCmsCollection();
   const collections = defsRes?.collections ?? [];
 
@@ -69,6 +71,18 @@ export default function CmsCollectionsPage() {
             New collection
           </Link>
         </Button>
+      </div>
+
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-muted/20 p-3">
+        <Input
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          placeholder="Search collections by name or key"
+          className="w-[320px] max-w-full bg-background"
+        />
+        <p className="text-xs text-muted-foreground">
+          {isLoading ? "Searching..." : `${collections.length} result(s)`}
+        </p>
       </div>
 
       {isLoading ? (

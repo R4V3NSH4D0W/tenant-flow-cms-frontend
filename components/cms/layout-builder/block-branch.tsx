@@ -234,9 +234,14 @@ function LayoutBuilderBlockRow({
                     Allow multiple
                   </Label>
                 </div>
+                <p className="basis-full text-[11px] text-muted-foreground">
+                  Allow multiple stores an array of selected item IDs. Off stores
+                  one selected item ID. Collection refs do not use schema
+                  defaults; editors choose references in the CMS form.
+                </p>
               </div>
             ) : null}
-            {isLeaf ? (
+            {isLeaf && block.type !== "collection_ref" ? (
               <div className="max-w-full border-t border-dashed border-muted-foreground/20 pt-2">
                 <LayoutBuilderLeafDefaultField
                   block={block}

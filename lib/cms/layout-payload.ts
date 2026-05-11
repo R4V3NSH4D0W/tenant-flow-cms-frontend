@@ -57,11 +57,11 @@ function emptyLeafValue(type: string): unknown {
 
 /** Uses schema `default` when set; otherwise type empty placeholder. */
 function leafValueFromDef(def: LayoutFieldDef): unknown {
-  if (def.default !== undefined) {
-    return normalizeLeafDefault(def.type, def.default);
-  }
   if (def.type === "collection_ref") {
     return def.multiple === false ? "" : [];
+  }
+  if (def.default !== undefined) {
+    return normalizeLeafDefault(def.type, def.default);
   }
   return emptyLeafValue(def.type);
 }
@@ -388,7 +388,6 @@ export function layoutFieldDefsToHydratedBlocks(
         type: def.type,
         key: def.key,
         children: [],
-        defaultStr: leafDefaultToBuilderString(def.type, def.default),
         collectionKey: def.collectionKey?.trim() || "testimonials",
         multiple: def.multiple !== false,
         required,

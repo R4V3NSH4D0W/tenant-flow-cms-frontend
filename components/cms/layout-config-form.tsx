@@ -63,6 +63,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+const COLLECTION_REFERENCE_VISIBLE_LIMIT = 50;
+
 function newSortRowId(): string {
   return crypto.randomUUID();
 }
@@ -310,6 +312,17 @@ function CollectionReferenceItemLabel({ item }: { item: CmsCollectionItem }) {
       </span>
     </span>
   );
+}
+
+function collectionReferenceMatchesSearch(
+  item: CmsCollectionItem,
+  query: string,
+): boolean {
+  const q = query.trim().toLowerCase();
+  if (!q) return true;
+  return [item.title, item.slug, item.id]
+    .filter((value): value is string => typeof value === "string")
+    .some((value) => value.toLowerCase().includes(q));
 }
 
 function FieldGroup({
@@ -914,6 +927,7 @@ function FieldRow({
   const baseId = useId();
   const fid = `${baseId}-${def.key}`;
   const collectionKey = (def.collectionKey ?? "").trim();
+  const [collectionRefSearch, setCollectionRefSearch] = useState("");
   const collectionQuery = useCmsCollectionItems(
     collectionKey,
     {
@@ -1146,6 +1160,22 @@ function FieldRow({
         ? raw.filter((id): id is string => typeof id === "string")
         : [];
       const selectedSingle = typeof raw === "string" ? raw : "";
+      const matchingItems = items.filter((item) =>
+        collectionReferenceMatchesSearch(item, collectionRefSearch),
+      );
+      const visibleItems = matchingItems.slice(
+        0,
+        COLLECTION_REFERENCE_VISIBLE_LIMIT,
+      );
+      const remainingMatches = Math.max(
+        matchingItems.length - visibleItems.length,
+        0,
+      );
+      const selectedManyItems = selectedMany
+        .map((id) => items.find((item) => item.id === id))
+        .filter((item): item is CmsCollectionItem => Boolean(item));
+      const selectedSingleItem = items.find((item) => item.id === selectedSingle);
+      const hasSearch = collectionRefSearch.trim().length > 0;
       return (
         <div className="min-w-0 space-y-2">
           <FieldLabelLine htmlFor={fid} def={def} />
@@ -1167,8 +1197,41 @@ function FieldRow({
               No items found in this collection. Add items in CMS Collections first.
             </p>
           ) : multiple ? (
-            <div className="space-y-2 rounded-md border p-3">
-              {items.map((item) => {
+            <div className="space-y-3 rounded-md border p-3">
+              <Input
+                id={`${fid}-search`}
+                value={collectionRefSearch}
+                onChange={(event) => setCollectionRefSearch(event.target.value)}
+                placeholder={`Search ${items.length} references by title or slug`}
+              />
+              {selectedManyItems.length > 0 ? (
+                <div className="rounded-md bg-muted/50 p-2 text-xs">
+                  <p className="mb-1 font-medium">
+                    Selected ({selectedManyItems.length})
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {selectedManyItems.slice(0, 8).map((item) => (
+                      <span
+                        key={item.id}
+                        className="max-w-full truncate rounded-full border bg-background px-2 py-1"
+                      >
+                        {item.title}
+                      </span>
+                    ))}
+                    {selectedManyItems.length > 8 ? (
+                      <span className="rounded-full border bg-background px-2 py-1 text-muted-foreground">
+                        +{selectedManyItems.length - 8} more
+                      </span>
+                    ) : null}
+                  </div>
+                </div>
+              ) : null}
+              {visibleItems.length === 0 ? (
+                <p className="text-xs text-muted-foreground">
+                  No references match “{collectionRefSearch.trim()}”.
+                </p>
+              ) : null}
+              {visibleItems.map((item) => {
                 const checked = selectedMany.includes(item.id);
                 return (
                   <div key={item.id} className="flex items-start gap-3">
@@ -1192,23 +1255,59 @@ function FieldRow({
                   </div>
                 );
               })}
+              <p className="text-xs text-muted-foreground">
+                Showing {visibleItems.length} of {matchingItems.length}{" "}
+                {hasSearch ? "matching " : ""}reference(s)
+                {remainingMatches > 0
+                  ? `, ${remainingMatches} more hidden. Keep typing to narrow results.`
+                  : "."}
+              </p>
             </div>
           ) : (
-            <Select
-              value={selectedSingle}
-              onValueChange={(next) => setLeaf(next)}
-            >
-              <SelectTrigger id={fid} className="w-full min-w-0">
-                <SelectValue placeholder="Choose item" />
-              </SelectTrigger>
-              <SelectContent>
-                {items.map((item) => (
-                  <SelectItem key={item.id} value={item.id}>
-                    <CollectionReferenceItemLabel item={item} />
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="space-y-3">
+              {selectedSingleItem ? (
+                <div className="rounded-md border bg-muted/30 p-2 text-sm">
+                  <p className="mb-1 text-xs font-medium text-muted-foreground">
+                    Selected
+                  </p>
+                  <CollectionReferenceItemLabel item={selectedSingleItem} />
+                </div>
+              ) : null}
+              <Input
+                id={`${fid}-search`}
+                value={collectionRefSearch}
+                onChange={(event) => setCollectionRefSearch(event.target.value)}
+                placeholder={`Search ${items.length} references by title or slug`}
+              />
+              <Select
+                value={selectedSingle}
+                onValueChange={(next) => setLeaf(next)}
+              >
+                <SelectTrigger id={fid} className="w-full min-w-0">
+                  <SelectValue placeholder="Choose item" />
+                </SelectTrigger>
+                <SelectContent>
+                  {visibleItems.map((item) => (
+                    <SelectItem key={item.id} value={item.id}>
+                      <CollectionReferenceItemLabel item={item} />
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {visibleItems.length === 0 ? (
+                <p className="text-xs text-muted-foreground">
+                  No references match “{collectionRefSearch.trim()}”.
+                </p>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  Showing {visibleItems.length} of {matchingItems.length}{" "}
+                  {hasSearch ? "matching " : ""}reference(s)
+                  {remainingMatches > 0
+                    ? `, ${remainingMatches} more hidden. Keep typing to narrow results.`
+                    : "."}
+                </p>
+              )}
+            </div>
           )}
         </div>
       );

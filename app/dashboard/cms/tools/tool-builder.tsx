@@ -77,7 +77,6 @@ function blockToDefinition(
       key: block.key,
       collectionKey: block.collectionKey?.trim() || "testimonials",
       multiple: block.multiple !== false,
-      ...(block.defaultStr !== undefined ? { defaultStr: block.defaultStr } : {}),
       ...(block.required ? { required: true } : {}),
     };
   }

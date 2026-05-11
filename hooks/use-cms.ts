@@ -417,12 +417,14 @@ export const useCmsCollectionItems = (
   });
 };
 
-export const useCmsCollections = () => {
+export const useCmsCollections = (options?: { q?: string; enabled?: boolean }) => {
   const { currentProject } = useCurrentProject();
+  const q = options?.q?.trim() ?? "";
+  const enabled = options?.enabled ?? true;
   return useQuery({
-    queryKey: ["cms-collection-defs", currentProject?.slug],
-    queryFn: () => cmsApi.listCollections(currentProject!.slug),
-    enabled: !!currentProject,
+    queryKey: ["cms-collection-defs", currentProject?.slug, q],
+    queryFn: () => cmsApi.listCollections(currentProject!.slug, q ? { q } : undefined),
+    enabled: !!currentProject && enabled,
   });
 };
 
