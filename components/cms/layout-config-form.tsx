@@ -63,7 +63,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-const COLLECTION_REFERENCE_VISIBLE_LIMIT = 50;
+const COLLECTION_REFERENCE_VISIBLE_LIMIT = 10;
 
 function newSortRowId(): string {
   return crypto.randomUUID();
@@ -928,6 +928,19 @@ function FieldRow({
   const fid = `${baseId}-${def.key}`;
   const collectionKey = (def.collectionKey ?? "").trim();
   const [collectionRefSearch, setCollectionRefSearch] = useState("");
+  const [collectionRefVisibleCount, setCollectionRefVisibleCount] = useState(
+    COLLECTION_REFERENCE_VISIBLE_LIMIT,
+  );
+  const collectionRefViewResetKey = `${collectionKey}:${collectionRefSearch
+    .trim()
+    .toLowerCase()}:${def.multiple !== false ? "many" : "single"}`;
+  const [collectionRefViewResetState, setCollectionRefViewResetState] = useState(
+    collectionRefViewResetKey,
+  );
+  if (collectionRefViewResetState !== collectionRefViewResetKey) {
+    setCollectionRefViewResetState(collectionRefViewResetKey);
+    setCollectionRefVisibleCount(COLLECTION_REFERENCE_VISIBLE_LIMIT);
+  }
   const collectionQuery = useCmsCollectionItems(
     collectionKey,
     {
@@ -1163,10 +1176,7 @@ function FieldRow({
       const matchingItems = items.filter((item) =>
         collectionReferenceMatchesSearch(item, collectionRefSearch),
       );
-      const visibleItems = matchingItems.slice(
-        0,
-        COLLECTION_REFERENCE_VISIBLE_LIMIT,
-      );
+      const visibleItems = matchingItems.slice(0, collectionRefVisibleCount);
       const remainingMatches = Math.max(
         matchingItems.length - visibleItems.length,
         0,
@@ -1176,6 +1186,9 @@ function FieldRow({
         .filter((item): item is CmsCollectionItem => Boolean(item));
       const selectedSingleItem = items.find((item) => item.id === selectedSingle);
       const hasSearch = collectionRefSearch.trim().length > 0;
+      const canShowLess =
+        collectionRefVisibleCount > COLLECTION_REFERENCE_VISIBLE_LIMIT &&
+        matchingItems.length > COLLECTION_REFERENCE_VISIBLE_LIMIT;
       return (
         <div className="min-w-0 space-y-2">
           <FieldLabelLine htmlFor={fid} def={def} />
@@ -1204,6 +1217,30 @@ function FieldRow({
                 onChange={(event) => setCollectionRefSearch(event.target.value)}
                 placeholder={`Search ${items.length} references by title or slug`}
               />
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    const set = new Set(selectedMany);
+                    for (const item of matchingItems) set.add(item.id);
+                    setLeaf(Array.from(set));
+                  }}
+                  disabled={matchingItems.length === 0}
+                >
+                  Select all
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setLeaf([])}
+                  disabled={selectedMany.length === 0}
+                >
+                  Remove all
+                </Button>
+              </div>
               {selectedManyItems.length > 0 ? (
                 <div className="rounded-md bg-muted/50 p-2 text-xs">
                   <p className="mb-1 font-medium">
@@ -1255,6 +1292,36 @@ function FieldRow({
                   </div>
                 );
               })}
+              {remainingMatches > 0 || canShowLess ? (
+                <div className="flex flex-wrap gap-2">
+                  {remainingMatches > 0 ? (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() =>
+                        setCollectionRefVisibleCount(
+                          (count) => count + COLLECTION_REFERENCE_VISIBLE_LIMIT,
+                        )
+                      }
+                    >
+                      View more ({remainingMatches})
+                    </Button>
+                  ) : null}
+                  {canShowLess ? (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onClick={() =>
+                        setCollectionRefVisibleCount(COLLECTION_REFERENCE_VISIBLE_LIMIT)
+                      }
+                    >
+                      Show less
+                    </Button>
+                  ) : null}
+                </div>
+              ) : null}
               <p className="text-xs text-muted-foreground">
                 Showing {visibleItems.length} of {matchingItems.length}{" "}
                 {hasSearch ? "matching " : ""}reference(s)
@@ -1294,6 +1361,36 @@ function FieldRow({
                   ))}
                 </SelectContent>
               </Select>
+              {remainingMatches > 0 || canShowLess ? (
+                <div className="flex flex-wrap gap-2">
+                  {remainingMatches > 0 ? (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() =>
+                        setCollectionRefVisibleCount(
+                          (count) => count + COLLECTION_REFERENCE_VISIBLE_LIMIT,
+                        )
+                      }
+                    >
+                      View more ({remainingMatches})
+                    </Button>
+                  ) : null}
+                  {canShowLess ? (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onClick={() =>
+                        setCollectionRefVisibleCount(COLLECTION_REFERENCE_VISIBLE_LIMIT)
+                      }
+                    >
+                      Show less
+                    </Button>
+                  ) : null}
+                </div>
+              ) : null}
               {visibleItems.length === 0 ? (
                 <p className="text-xs text-muted-foreground">
                   No references match “{collectionRefSearch.trim()}”.
