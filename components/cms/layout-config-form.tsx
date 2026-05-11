@@ -931,6 +931,12 @@ function FieldRow({
   const [collectionRefVisibleCount, setCollectionRefVisibleCount] = useState(
     COLLECTION_REFERENCE_VISIBLE_LIMIT,
   );
+  const [draggingSelectedRefId, setDraggingSelectedRefId] = useState<
+    string | null
+  >(null);
+  const [dragOverSelectedRefId, setDragOverSelectedRefId] = useState<
+    string | null
+  >(null);
   const collectionRefViewResetKey = `${collectionKey}:${collectionRefSearch
     .trim()
     .toLowerCase()}:${def.multiple !== false ? "many" : "single"}`;
@@ -1246,20 +1252,72 @@ function FieldRow({
                   <p className="mb-1 font-medium">
                     Selected ({selectedManyItems.length})
                   </p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {selectedManyItems.slice(0, 8).map((item) => (
-                      <span
+                  <div className="max-h-32 overflow-auto pr-1">
+                    <div className="flex flex-wrap gap-1.5">
+                    {selectedManyItems.map((item) => (
+                      <div
                         key={item.id}
-                        className="max-w-full truncate rounded-full border bg-background px-2 py-1"
+                        draggable
+                        onDragStart={(event) => {
+                          setDraggingSelectedRefId(item.id);
+                          setDragOverSelectedRefId(null);
+                          event.dataTransfer.effectAllowed = "move";
+                          event.dataTransfer.setData("text/plain", item.id);
+                        }}
+                        onDragOver={(event) => {
+                          event.preventDefault();
+                          event.dataTransfer.dropEffect = "move";
+                          if (draggingSelectedRefId !== item.id) {
+                            setDragOverSelectedRefId(item.id);
+                          }
+                        }}
+                        onDragEnter={() => {
+                          if (draggingSelectedRefId !== item.id) {
+                            setDragOverSelectedRefId(item.id);
+                          }
+                        }}
+                        onDragLeave={() => {
+                          setDragOverSelectedRefId((prev) =>
+                            prev === item.id ? null : prev,
+                          );
+                        }}
+                        onDrop={(event) => {
+                          event.preventDefault();
+                          if (!draggingSelectedRefId || draggingSelectedRefId === item.id) {
+                            setDraggingSelectedRefId(null);
+                            setDragOverSelectedRefId(null);
+                            return;
+                          }
+                          const from = selectedMany.indexOf(draggingSelectedRefId);
+                          const to = selectedMany.indexOf(item.id);
+                          if (from < 0 || to < 0) {
+                            setDraggingSelectedRefId(null);
+                            setDragOverSelectedRefId(null);
+                            return;
+                          }
+                          setLeaf(arrayMove(selectedMany, from, to));
+                          setDraggingSelectedRefId(null);
+                          setDragOverSelectedRefId(null);
+                        }}
+                        onDragEnd={() => {
+                          setDraggingSelectedRefId(null);
+                          setDragOverSelectedRefId(null);
+                        }}
+                        className={cn(
+                          "inline-flex max-w-[220px] cursor-grab items-center gap-1 rounded-full border bg-background px-2 py-1 active:cursor-grabbing",
+                          draggingSelectedRefId &&
+                            draggingSelectedRefId !== item.id &&
+                            "border-dashed border-muted-foreground/50",
+                          dragOverSelectedRefId === item.id &&
+                            "border-primary bg-primary/10 ring-1 ring-primary/40",
+                          draggingSelectedRefId === item.id && "opacity-60",
+                        )}
                       >
-                        {item.title}
-                      </span>
+                        <GripVertical className="h-3 w-3 shrink-0 text-muted-foreground" />
+                        <span className="truncate text-[11px]">{item.title}</span>
+                      </div>
                     ))}
-                    {selectedManyItems.length > 8 ? (
-                      <span className="rounded-full border bg-background px-2 py-1 text-muted-foreground">
-                        +{selectedManyItems.length - 8} more
-                      </span>
-                    ) : null}
+                    </div>
                   </div>
                 </div>
               ) : null}
