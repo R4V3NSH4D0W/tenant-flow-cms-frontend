@@ -4,6 +4,7 @@ import {
   FiBox,
   FiCalendar,
   FiDatabase,
+  FiDroplet,
   FiExternalLink,
   FiFeather,
   FiFileText,
@@ -24,6 +25,7 @@ export type SectionBlockType =
   | "badge"
   | "image"
   | "icon"
+  | "color"
   | "number"
   | "boolean"
   | "url"
@@ -129,6 +131,13 @@ export const SECTION_TOOLS: SectionTool[] = [
     group: "content",
   },
   {
+    id: "color",
+    name: "Color",
+    description: "Hex or CSS color value",
+    icon: FiDroplet,
+    group: "content",
+  },
+  {
     id: "icon",
     name: "Icon",
     description: "Icon name or ref (e.g. Lucide name, emoji, or asset URL)",
@@ -186,6 +195,7 @@ export const TYPE_LABEL: Record<SectionBlockType, string> = {
   badge: "Badge",
   image: "Image",
   icon: "Icon",
+  color: "Color",
   number: "Number",
   boolean: "Boolean",
   url: "URL",
@@ -203,6 +213,7 @@ export const TYPE_SHORT: Record<SectionBlockType, string> = {
   badge: "bdg",
   image: "img",
   icon: "icn",
+  color: "clr",
   number: "num",
   boolean: "bool",
   url: "url",
@@ -227,6 +238,7 @@ const ROOT_DEFAULT_KEY: Partial<Record<SectionBlockType, string>> = {
   badge: "badge",
   image: "image",
   icon: "icon",
+  color: "color",
   link: "link",
   collection_ref: "references",
   array: "items",
@@ -241,6 +253,7 @@ const NESTED_DEFAULT_KEY: Record<SectionBlockType, string> = {
   badge: "badge",
   image: "image",
   icon: "icon",
+  color: "color",
   number: "number",
   boolean: "boolean",
   url: "url",

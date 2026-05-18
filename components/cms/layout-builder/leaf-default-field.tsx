@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -27,6 +28,63 @@ export function LayoutBuilderLeafDefaultField({
 }) {
   const id = block.id;
   const v = block.defaultStr;
+  const colorInputRef = useRef<HTMLInputElement>(null);
+
+  if (block.type === "image") {
+    // Images are always selected at edit time — no default value needed.
+    return null;
+  }
+
+  if (block.type === "color") {
+    // Normalize to a 6-digit hex for the native color input (falls back to #000000).
+    const hexForPicker = /^#[0-9a-fA-F]{6}$/.test(v ?? "") ? v! : "#000000";
+    return (
+      <div className="flex min-w-0 flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-2">
+        <span className="shrink-0 text-xs text-muted-foreground">Default color</span>
+        <div className="flex items-center gap-2">
+          {/* Hidden native color picker — triggered by clicking the swatch */}
+          <input
+            ref={colorInputRef}
+            type="color"
+            value={hexForPicker}
+            onChange={(e) => onChange(id, e.target.value)}
+            className="sr-only"
+            tabIndex={-1}
+            aria-hidden
+          />
+          {/* Clickable color swatch */}
+          <button
+            type="button"
+            onClick={() => colorInputRef.current?.click()}
+            className="h-8 w-8 shrink-0 rounded-md border shadow-sm transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            style={{ backgroundColor: hexForPicker }}
+            aria-label="Pick color"
+            title="Click to open color picker"
+          />
+          {/* Hex text input — also accepts typed #rrggbb or shorthand */}
+          <Input
+            value={v ?? ""}
+            onChange={(e) => {
+              const t = e.target.value;
+              onChange(id, t === "" ? undefined : t);
+            }}
+            className="h-8 w-[130px] font-mono text-xs"
+            placeholder="#3b82f6"
+            spellCheck={false}
+          />
+          {v ? (
+            <button
+              type="button"
+              onClick={() => onChange(id, undefined)}
+              className="text-[11px] text-muted-foreground underline-offset-2 hover:underline"
+            >
+              Clear
+            </button>
+          ) : null}
+        </div>
+      </div>
+    );
+  }
 
   if (block.type === "link") {
     const d = block.defaultLink ?? {
