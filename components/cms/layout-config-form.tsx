@@ -6,6 +6,7 @@ import {
   type SetStateAction,
   useId,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import Image from "next/image";
@@ -927,6 +928,7 @@ function FieldRow({
   const baseId = useId();
   const fid = `${baseId}-${def.key}`;
   const collectionKey = (def.collectionKey ?? "").trim();
+  const colorInputRef = useRef<HTMLInputElement>(null);
   const [collectionRefSearch, setCollectionRefSearch] = useState("");
   const [collectionRefVisibleCount, setCollectionRefVisibleCount] = useState(
     COLLECTION_REFERENCE_VISIBLE_LIMIT,
@@ -1171,6 +1173,56 @@ function FieldRow({
           />
         </div>
       );
+    case "color": {
+      const colorVal = typeof v === "string" ? v : "";
+      const hexForPicker = /^#[0-9a-fA-F]{6}$/.test(colorVal)
+        ? colorVal
+        : "#000000";
+      return (
+        <div className="min-w-0 space-y-2">
+          <FieldLabelLine htmlFor={fid} def={def} />
+          <div className="flex items-center gap-2">
+            {/* Hidden native color picker triggered by clicking the swatch */}
+            <input
+              ref={colorInputRef}
+              type="color"
+              value={hexForPicker}
+              onChange={(e) => setLeaf(e.target.value)}
+              className="sr-only"
+              tabIndex={-1}
+              aria-hidden
+            />
+            {/* Clickable swatch */}
+            <button
+              type="button"
+              onClick={() => colorInputRef.current?.click()}
+              className="h-9 w-9 shrink-0 rounded-md border shadow-sm transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              style={{ backgroundColor: hexForPicker }}
+              aria-label="Open color picker"
+              title="Click to pick a color"
+            />
+            {/* Hex text input */}
+            <Input
+              id={fid}
+              value={colorVal}
+              onChange={(e) => setLeaf(e.target.value === "" ? undefined : e.target.value)}
+              className="h-9 w-[140px] font-mono text-sm"
+              placeholder="#3b82f6"
+              spellCheck={false}
+            />
+            {colorVal ? (
+              <button
+                type="button"
+                onClick={() => setLeaf(undefined)}
+                className="text-xs text-muted-foreground underline-offset-2 hover:underline"
+              >
+                Clear
+              </button>
+            ) : null}
+          </div>
+        </div>
+      );
+    }
     case "collection_ref": {
       const items = collectionQuery.data?.items ?? [];
       const multiple = def.multiple !== false;
