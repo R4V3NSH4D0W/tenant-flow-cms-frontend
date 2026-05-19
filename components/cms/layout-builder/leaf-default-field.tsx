@@ -30,8 +30,8 @@ export function LayoutBuilderLeafDefaultField({
   const v = block.defaultStr;
   const colorInputRef = useRef<HTMLInputElement>(null);
 
-  if (block.type === "image" || block.type === "icon_image") {
-    // Images/icon images are always selected at edit time — no default value needed.
+  if (block.type === "image" || block.type === "icon_image" || block.type === "svgcode") {
+    // Images/icon images/svgcodes are always selected or pasted at edit time — no default value needed.
     return null;
   }
 

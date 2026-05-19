@@ -48,6 +48,7 @@ function emptyLeafValue(type: string): unknown {
     case "badge":
     case "image":
     case "icon_image":
+    case "svgcode":
     case "file":
     case "icon":
     case "url":
@@ -95,6 +96,7 @@ function normalizeLeafDefault(type: string, raw: unknown): unknown {
     case "badge":
     case "image":
     case "icon_image":
+    case "svgcode":
     case "file":
     case "icon":
     case "url":
@@ -229,6 +231,7 @@ const VALID_SECTION_BLOCK_TYPES = new Set<string>([
   "badge",
   "image",
   "icon_image",
+  "svgcode",
   "file",
   "icon",
   "number",
@@ -446,6 +449,7 @@ function isLeafValueEmpty(type: string, value: unknown): boolean {
     case "badge":
     case "image":
     case "icon_image":
+    case "svgcode":
     case "icon":
     case "url":
     case "date":

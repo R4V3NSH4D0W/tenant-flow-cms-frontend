@@ -1184,6 +1184,22 @@ function FieldRow({
           />
         </div>
       );
+    case "svgcode":
+      return (
+        <div className="min-w-0 space-y-2">
+          <FieldLabelLine htmlFor={fid} def={def} />
+          <Textarea
+            id={fid}
+            className="w-full min-h-[120px] font-mono text-xs resize-y leading-normal"
+            value={typeof v === "string" ? v : ""}
+            onChange={(e) => setLeaf(e.target.value)}
+            placeholder='<svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+  <path strokeLinecap="round" strokeLinejoin="round" d="..." />
+</svg>'
+            spellCheck={false}
+          />
+        </div>
+      );
     case "icon":
       return (
         <div className="min-w-0 space-y-2">

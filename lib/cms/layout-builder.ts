@@ -26,6 +26,7 @@ export type SectionBlockType =
   | "badge"
   | "image"
   | "icon_image"
+  | "svgcode"
   | "file"
   | "icon"
   | "color"
@@ -141,6 +142,13 @@ export const SECTION_TOOLS: SectionTool[] = [
     group: "content",
   },
   {
+    id: "svgcode",
+    name: "SVG Code",
+    description: "Raw XML SVG string pasted directly (e.g. <svg>...</svg>)",
+    icon: FiFeather,
+    group: "content",
+  },
+  {
     id: "file",
     name: "File",
     description: "Downloadable file (PDF, DOCX, etc.) — upload or link",
@@ -212,6 +220,7 @@ export const TYPE_LABEL: Record<SectionBlockType, string> = {
   badge: "Badge",
   image: "Image",
   icon_image: "Icon image",
+  svgcode: "SVG Code",
   file: "File",
   icon: "Icon",
   color: "Color",
@@ -232,6 +241,7 @@ export const TYPE_SHORT: Record<SectionBlockType, string> = {
   badge: "bdg",
   image: "img",
   icon_image: "ico",
+  svgcode: "svg",
   file: "file",
   icon: "icn",
   color: "clr",
@@ -259,6 +269,7 @@ const ROOT_DEFAULT_KEY: Partial<Record<SectionBlockType, string>> = {
   badge: "badge",
   image: "image",
   icon_image: "iconImage",
+  svgcode: "svgcode",
   file: "file",
   icon: "icon",
   color: "color",
@@ -276,6 +287,7 @@ const NESTED_DEFAULT_KEY: Record<SectionBlockType, string> = {
   badge: "badge",
   image: "image",
   icon_image: "iconImage",
+  svgcode: "svgcode",
   file: "file",
   icon: "icn",
   color: "color",
