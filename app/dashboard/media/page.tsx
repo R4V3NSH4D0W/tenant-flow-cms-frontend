@@ -5,6 +5,7 @@ import { useCurrentProject } from "@/components/providers/current-project-provid
 import {
   ArrowLeft,
   ClipboardPaste,
+  FileIcon,
   Folder,
   FolderPlus,
   Loader2,
@@ -53,6 +54,7 @@ interface MediaLibraryResponse {
     id: string;
     name: string;
     url: string;
+    isImage?: boolean;
   }[];
 }
 
@@ -308,7 +310,7 @@ export default function MediaLibraryPage() {
             ref={fileInputRef}
             className="hidden"
             onChange={handleFileSelect}
-            accept="image/*"
+            accept="*/*"
           />
           <Button
             size="sm"
@@ -406,14 +408,23 @@ export default function MediaLibraryPage() {
                     </DropdownMenu>
                   </div>
                   <div className="relative aspect-square bg-muted">
-                    <Image
-                      src={getImageUrl(file.url)}
-                      alt={file.name}
-                      fill
-                      sizes="(max-width: 768px) 50vw, (max-width: 1024px) 25vw, 17vw"
-                      quality={70}
-                      className="object-cover"
-                    />
+                    {file.isImage !== false ? (
+                      <Image
+                        src={getImageUrl(file.url)}
+                        alt={file.name}
+                        fill
+                        sizes="(max-width: 768px) 50vw, (max-width: 1024px) 25vw, 17vw"
+                        quality={70}
+                        className="object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-full w-full flex-col items-center justify-center gap-1 p-2">
+                        <FileIcon className="h-10 w-10 text-muted-foreground" strokeWidth={1.5} />
+                        <span className="rounded bg-muted-foreground/10 px-1.5 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                          {file.name.split(".").pop() ?? "file"}
+                        </span>
+                      </div>
+                    )}
                   </div>
                   <div className="border-t border-border bg-card p-2">
                     <p className="truncate text-xs" title={file.name}>

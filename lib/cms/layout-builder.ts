@@ -7,6 +7,7 @@ import {
   FiDroplet,
   FiExternalLink,
   FiFeather,
+  FiFile,
   FiFileText,
   FiHash,
   FiImage,
@@ -24,6 +25,7 @@ export type SectionBlockType =
   | "textarea"
   | "badge"
   | "image"
+  | "file"
   | "icon"
   | "color"
   | "number"
@@ -131,6 +133,13 @@ export const SECTION_TOOLS: SectionTool[] = [
     group: "content",
   },
   {
+    id: "file",
+    name: "File",
+    description: "Downloadable file (PDF, DOCX, etc.) — upload or link",
+    icon: FiFile,
+    group: "content",
+  },
+  {
     id: "color",
     name: "Color",
     description: "Hex or CSS color value",
@@ -194,6 +203,7 @@ export const TYPE_LABEL: Record<SectionBlockType, string> = {
   textarea: "Text area",
   badge: "Badge",
   image: "Image",
+  file: "File",
   icon: "Icon",
   color: "Color",
   number: "Number",
@@ -212,6 +222,7 @@ export const TYPE_SHORT: Record<SectionBlockType, string> = {
   textarea: "txa",
   badge: "bdg",
   image: "img",
+  file: "file",
   icon: "icn",
   color: "clr",
   number: "num",
@@ -237,6 +248,7 @@ const ROOT_DEFAULT_KEY: Partial<Record<SectionBlockType, string>> = {
   textarea: "textarea",
   badge: "badge",
   image: "image",
+  file: "file",
   icon: "icon",
   color: "color",
   link: "link",
@@ -252,7 +264,8 @@ const NESTED_DEFAULT_KEY: Record<SectionBlockType, string> = {
   textarea: "textarea",
   badge: "badge",
   image: "image",
-  icon: "icon",
+  file: "file",
+  icon: "icn",
   color: "color",
   number: "number",
   boolean: "boolean",

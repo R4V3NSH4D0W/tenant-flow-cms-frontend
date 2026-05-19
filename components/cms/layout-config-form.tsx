@@ -49,8 +49,8 @@ import {
 } from "@/lib/cms/layout-payload";
 import { cn } from "@/lib/shared/utils";
 import { CmsReferenceScreenshotField } from "@/components/cms/cms-reference-screenshot-field";
+import { CmsFileUploadField } from "@/components/cms/cms-file-upload-field";
 import { useCmsCollectionItems } from "@/hooks/use-cms";
-import { absoluteApiUrl } from "@/lib/cms/absolute-url";
 import {
   findCollectionItemPreviewImage,
   type CmsCollectionItemPreviewImage,
@@ -63,6 +63,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { absoluteApiUrl } from "@/lib/cms/absolute-url";
 
 const COLLECTION_REFERENCE_VISIBLE_LIMIT = 10;
 
@@ -1063,10 +1064,10 @@ function FieldRow({
       const nested = value[def.key];
       const rawForLink =
         flattenArrayItemLinks &&
-        nested &&
-        typeof nested === "object" &&
-        !Array.isArray(nested) &&
-        ("value" in (nested as object) || "href" in (nested as object))
+          nested &&
+          typeof nested === "object" &&
+          !Array.isArray(nested) &&
+          ("value" in (nested as object) || "href" in (nested as object))
           ? nested
           : flattenArrayItemLinks
             ? value
@@ -1151,6 +1152,18 @@ function FieldRow({
         <div className="min-w-0 space-y-2">
           <FieldLabelLine htmlFor={fid} def={def} />
           <CmsReferenceScreenshotField
+            inputId={fid}
+            hideLabel
+            value={typeof v === "string" ? v : ""}
+            onChange={(url) => setLeaf(url)}
+          />
+        </div>
+      );
+    case "file":
+      return (
+        <div className="min-w-0 space-y-2">
+          <FieldLabelLine htmlFor={fid} def={def} />
+          <CmsFileUploadField
             inputId={fid}
             hideLabel
             value={typeof v === "string" ? v : ""}
@@ -1306,69 +1319,69 @@ function FieldRow({
                   </p>
                   <div className="max-h-32 overflow-auto pr-1">
                     <div className="flex flex-wrap gap-1.5">
-                    {selectedManyItems.map((item) => (
-                      <div
-                        key={item.id}
-                        draggable
-                        onDragStart={(event) => {
-                          setDraggingSelectedRefId(item.id);
-                          setDragOverSelectedRefId(null);
-                          event.dataTransfer.effectAllowed = "move";
-                          event.dataTransfer.setData("text/plain", item.id);
-                        }}
-                        onDragOver={(event) => {
-                          event.preventDefault();
-                          event.dataTransfer.dropEffect = "move";
-                          if (draggingSelectedRefId !== item.id) {
-                            setDragOverSelectedRefId(item.id);
-                          }
-                        }}
-                        onDragEnter={() => {
-                          if (draggingSelectedRefId !== item.id) {
-                            setDragOverSelectedRefId(item.id);
-                          }
-                        }}
-                        onDragLeave={() => {
-                          setDragOverSelectedRefId((prev) =>
-                            prev === item.id ? null : prev,
-                          );
-                        }}
-                        onDrop={(event) => {
-                          event.preventDefault();
-                          if (!draggingSelectedRefId || draggingSelectedRefId === item.id) {
+                      {selectedManyItems.map((item) => (
+                        <div
+                          key={item.id}
+                          draggable
+                          onDragStart={(event) => {
+                            setDraggingSelectedRefId(item.id);
+                            setDragOverSelectedRefId(null);
+                            event.dataTransfer.effectAllowed = "move";
+                            event.dataTransfer.setData("text/plain", item.id);
+                          }}
+                          onDragOver={(event) => {
+                            event.preventDefault();
+                            event.dataTransfer.dropEffect = "move";
+                            if (draggingSelectedRefId !== item.id) {
+                              setDragOverSelectedRefId(item.id);
+                            }
+                          }}
+                          onDragEnter={() => {
+                            if (draggingSelectedRefId !== item.id) {
+                              setDragOverSelectedRefId(item.id);
+                            }
+                          }}
+                          onDragLeave={() => {
+                            setDragOverSelectedRefId((prev) =>
+                              prev === item.id ? null : prev,
+                            );
+                          }}
+                          onDrop={(event) => {
+                            event.preventDefault();
+                            if (!draggingSelectedRefId || draggingSelectedRefId === item.id) {
+                              setDraggingSelectedRefId(null);
+                              setDragOverSelectedRefId(null);
+                              return;
+                            }
+                            const from = selectedMany.indexOf(draggingSelectedRefId);
+                            const to = selectedMany.indexOf(item.id);
+                            if (from < 0 || to < 0) {
+                              setDraggingSelectedRefId(null);
+                              setDragOverSelectedRefId(null);
+                              return;
+                            }
+                            setLeaf(arrayMove(selectedMany, from, to));
                             setDraggingSelectedRefId(null);
                             setDragOverSelectedRefId(null);
-                            return;
-                          }
-                          const from = selectedMany.indexOf(draggingSelectedRefId);
-                          const to = selectedMany.indexOf(item.id);
-                          if (from < 0 || to < 0) {
+                          }}
+                          onDragEnd={() => {
                             setDraggingSelectedRefId(null);
                             setDragOverSelectedRefId(null);
-                            return;
-                          }
-                          setLeaf(arrayMove(selectedMany, from, to));
-                          setDraggingSelectedRefId(null);
-                          setDragOverSelectedRefId(null);
-                        }}
-                        onDragEnd={() => {
-                          setDraggingSelectedRefId(null);
-                          setDragOverSelectedRefId(null);
-                        }}
-                        className={cn(
-                          "inline-flex max-w-[220px] cursor-grab items-center gap-1 rounded-full border bg-background px-2 py-1 active:cursor-grabbing",
-                          draggingSelectedRefId &&
+                          }}
+                          className={cn(
+                            "inline-flex max-w-[220px] cursor-grab items-center gap-1 rounded-full border bg-background px-2 py-1 active:cursor-grabbing",
+                            draggingSelectedRefId &&
                             draggingSelectedRefId !== item.id &&
                             "border-dashed border-muted-foreground/50",
-                          dragOverSelectedRefId === item.id &&
+                            dragOverSelectedRefId === item.id &&
                             "border-primary bg-primary/10 ring-1 ring-primary/40",
-                          draggingSelectedRefId === item.id && "opacity-60",
-                        )}
-                      >
-                        <GripVertical className="h-3 w-3 shrink-0 text-muted-foreground" />
-                        <span className="truncate text-[11px]">{item.title}</span>
-                      </div>
-                    ))}
+                            draggingSelectedRefId === item.id && "opacity-60",
+                          )}
+                        >
+                          <GripVertical className="h-3 w-3 shrink-0 text-muted-foreground" />
+                          <span className="truncate text-[11px]">{item.title}</span>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 </div>

@@ -241,7 +241,7 @@ function LayoutBuilderBlockRow({
                 </p>
               </div>
             ) : null}
-            {isLeaf && block.type !== "collection_ref" ? (
+            {isLeaf && block.type !== "collection_ref" && block.type !== "image" && block.type !== "file" ? (
               <div className="max-w-full border-t border-dashed border-muted-foreground/20 pt-2">
                 <LayoutBuilderLeafDefaultField
                   block={block}

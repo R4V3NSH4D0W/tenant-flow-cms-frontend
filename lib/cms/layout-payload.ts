@@ -47,6 +47,7 @@ function emptyLeafValue(type: string): unknown {
     case "textarea":
     case "badge":
     case "image":
+    case "file":
     case "icon":
     case "url":
     case "date":
@@ -92,6 +93,7 @@ function normalizeLeafDefault(type: string, raw: unknown): unknown {
     case "textarea":
     case "badge":
     case "image":
+    case "file":
     case "icon":
     case "url":
     case "date":
@@ -224,6 +226,7 @@ const VALID_SECTION_BLOCK_TYPES = new Set<string>([
   "textarea",
   "badge",
   "image",
+  "file",
   "icon",
   "number",
   "boolean",

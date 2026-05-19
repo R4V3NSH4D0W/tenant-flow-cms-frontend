@@ -12,7 +12,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, CheckCircle2, Folder } from "lucide-react";
+import { ArrowLeft, CheckCircle2, FileIcon, Folder } from "lucide-react";
 import Image from "next/image";
 import { toast } from "sonner";
 import { cn, getImageUrl } from "@/lib/shared/utils";
@@ -165,7 +165,7 @@ export function MediaPickerModal({
                 </div>
               ))}
 
-              {files.map((file: { id: string; url: string; name: string }) => {
+              {files.map((file: { id: string; url: string; name: string; isImage?: boolean }) => {
                 const isSelected = selectedUrls.includes(file.url);
                 return (
                   <div
@@ -176,14 +176,23 @@ export function MediaPickerModal({
                     )}
                     onClick={() => toggleSelection(file.url)}
                   >
-                    <Image
-                      src={getImageUrl(file.url)}
-                      alt={file.name}
-                      fill
-                      sizes="(max-width: 768px) 33vw, 20vw"
-                      quality={70}
-                      className="object-cover"
-                    />
+                    {file.isImage !== false ? (
+                      <Image
+                        src={getImageUrl(file.url)}
+                        alt={file.name}
+                        fill
+                        sizes="(max-width: 768px) 33vw, 20vw"
+                        quality={70}
+                        className="object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-full w-full flex-col items-center justify-center gap-1 bg-muted p-3">
+                        <FileIcon className="h-10 w-10 text-muted-foreground" strokeWidth={1.5} />
+                        <span className="rounded bg-muted-foreground/10 px-1.5 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
+                          {file.name.split(".").pop() ?? "file"}
+                        </span>
+                      </div>
+                    )}
                     {isSelected && (
                       <div className="bg-primary text-primary-foreground absolute top-2 right-2 rounded-full p-0.5">
                         <CheckCircle2 className="h-5 w-5" />

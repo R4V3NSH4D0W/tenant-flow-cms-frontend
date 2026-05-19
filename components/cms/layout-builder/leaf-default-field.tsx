@@ -35,6 +35,11 @@ export function LayoutBuilderLeafDefaultField({
     return null;
   }
 
+  if (block.type === "file") {
+    // File fields have no schema default — the file is always picked at edit time.
+    return null;
+  }
+
   if (block.type === "color") {
     // Normalize to a 6-digit hex for the native color input (falls back to #000000).
     const hexForPicker = /^#[0-9a-fA-F]{6}$/.test(v ?? "") ? v! : "#000000";
@@ -125,10 +130,8 @@ export function LayoutBuilderLeafDefaultField({
               id={`cms-layout-link-href-${id}`}
               type="url"
               value={d.href}
-              onChange={(e) =>
-                onLinkChange(id, { ...d, href: e.target.value })
-              }
-              className="h-8 font-mono text-xs"
+              onChange={(e) => onLinkChange(id, { ...d, href: e.target.value })}
+              className="h-8 min-w-0 flex-1 font-mono text-xs"
               placeholder="https://…"
               spellCheck={false}
             />
