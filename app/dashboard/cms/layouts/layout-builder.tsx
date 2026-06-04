@@ -65,6 +65,7 @@ import {
   updateBlockDefaultLink,
   updateBlockCollectionKey,
   updateBlockCollectionMultiple,
+  updateBlockSelectOptions,
   updateBlockKey,
   updateBlockRequired,
   type LayoutBuilderProps,
@@ -276,6 +277,13 @@ function LayoutBuilder({ mode, layoutId }: LayoutBuilderProps) {
   const setBlockCollectionMultiple = useCallback(
     (id: string, multiple: boolean) => {
       setBlocks((prev) => updateBlockCollectionMultiple(prev, id, multiple));
+    },
+    [],
+  );
+
+  const setBlockSelectOptions = useCallback(
+    (id: string, options: string[]) => {
+      setBlocks((prev) => updateBlockSelectOptions(prev, id, options));
     },
     [],
   );
@@ -719,6 +727,7 @@ function LayoutBuilder({ mode, layoutId }: LayoutBuilderProps) {
                           onRequiredChange={setBlockRequired}
                           onCollectionKeyChange={setBlockCollectionKey}
                           onCollectionMultipleChange={setBlockCollectionMultiple}
+                          onSelectOptionsChange={setBlockSelectOptions}
                           onMoveBlock={moveBlock}
                           customTools={Object.values(
                             customToolsQuery.data?.tools ?? {},

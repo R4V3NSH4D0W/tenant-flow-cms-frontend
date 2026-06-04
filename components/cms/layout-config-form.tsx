@@ -35,6 +35,11 @@ import {
   GripVertical,
   ArrowUp,
   ArrowDown,
+  ImageIcon,
+  Trash2,
+  ArrowLeft,
+  ArrowRight,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -51,6 +56,10 @@ import { cn } from "@/lib/shared/utils";
 import { CmsReferenceScreenshotField } from "@/components/cms/cms-reference-screenshot-field";
 import { CmsFileUploadField } from "@/components/cms/cms-file-upload-field";
 import { CmsIconImageUploadField } from "@/components/cms/cms-icon-image-upload-field";
+import { MediaPickerModal } from "@/components/media/media-picker-modal";
+import { useCurrentProject } from "@/components/providers/current-project-provider";
+import { uploadCmsReferenceImage } from "@/lib/cms/reference-image-upload";
+import { toast } from "sonner";
 import { useCmsCollectionItems } from "@/hooks/use-cms";
 import {
   findCollectionItemPreviewImage,
@@ -588,6 +597,192 @@ function SortableObjectFieldRow({
       </div>
       <div className="min-w-0 pl-1">{children}</div>
     </li>
+  );
+}
+
+function MultiImageFieldEditor({
+  fid,
+  def,
+  value,
+  onChange,
+}: {
+  fid: string;
+  def: LayoutFieldDef;
+  value: unknown;
+  onChange: (val: string[]) => void;
+}) {
+  const { currentProject } = useCurrentProject();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
+
+  const list = useMemo(() => {
+    if (Array.isArray(value)) {
+      return value.filter((v): v is string => typeof v === "string" && !!v.trim());
+    }
+    return [];
+  }, [value]);
+
+  const handleLibraryPick = (urls: string[]) => {
+    const next = [...list, ...urls];
+    onChange(next);
+  };
+
+  const handleRemove = (index: number) => {
+    const next = [...list];
+    next.splice(index, 1);
+    onChange(next);
+  };
+
+  const handleMove = (index: number, direction: "left" | "right") => {
+    if (direction === "left" && index === 0) return;
+    if (direction === "right" && index === list.length - 1) return;
+    const next = [...list];
+    const targetIndex = direction === "left" ? index - 1 : index + 1;
+    const [moved] = next.splice(index, 1);
+    next.splice(targetIndex, 0, moved);
+    onChange(next);
+  };
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? []);
+    if (files.length === 0) return;
+
+    const slug = currentProject?.slug;
+    if (!slug) {
+      toast.error("Project context not found. Please refresh and try again.");
+      return;
+    }
+
+    setUploading(true);
+    const toastId = toast.loading(`Uploading ${files.length} image(s)...`);
+    
+    try {
+      const uploadPromises = files.map(async (file) => {
+        if (!file.type.startsWith("image/")) {
+          throw new Error(`${file.name} is not an image file.`);
+        }
+        return await uploadCmsReferenceImage(file, slug);
+      });
+      const urls = await Promise.all(uploadPromises);
+      onChange([...list, ...urls]);
+      toast.success(`Successfully uploaded ${urls.length} image(s).`, { id: toastId });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Upload failed.", { id: toastId });
+    } finally {
+      setUploading(false);
+      e.target.value = "";
+    }
+  };
+
+  return (
+    <div className="min-w-0 space-y-2">
+      <FieldLabelLine htmlFor={fid} def={def} />
+      
+      {list.length > 0 ? (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+          {list.map((url, i) => {
+            const src = absoluteApiUrl(url);
+            return (
+              <div key={url + "-" + i} className="group relative flex flex-col items-center justify-between rounded-lg border bg-background p-2 shadow-xs transition-colors hover:border-muted-foreground/35">
+                <div className="relative aspect-video w-full overflow-hidden rounded-md border bg-muted">
+                  <Image
+                    src={src}
+                    alt=""
+                    fill
+                    className="object-cover object-top"
+                    sizes="128px"
+                  />
+                </div>
+                <div className="mt-2 flex w-full justify-between items-center gap-1">
+                  <div className="flex items-center gap-1">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-muted-foreground"
+                      onClick={() => handleMove(i, "left")}
+                      disabled={i === 0}
+                      title="Move left"
+                    >
+                      <ArrowLeft className="h-3 w-3" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-muted-foreground"
+                      onClick={() => handleMove(i, "right")}
+                      disabled={i === list.length - 1}
+                      title="Move right"
+                    >
+                      <ArrowRight className="h-3 w-3" />
+                    </Button>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 text-destructive opacity-80 hover:opacity-100"
+                    onClick={() => handleRemove(i)}
+                    title="Remove image"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <p className="text-xs text-muted-foreground italic rounded-md border border-dashed bg-muted/20 p-3 text-center">
+          No images selected. Click button below to upload or choose images.
+        </p>
+      )}
+
+      <div className="flex flex-wrap items-center gap-2">
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          multiple
+          className="sr-only"
+          onChange={handleUpload}
+          disabled={uploading}
+        />
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          className="gap-1.5"
+          disabled={uploading}
+          onClick={() => fileInputRef.current?.click()}
+        >
+          {uploading ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <ImageIcon className="h-4 w-4" />
+          )}
+          Upload images
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          disabled={uploading}
+          onClick={() => setPickerOpen(true)}
+        >
+          Choose from library
+        </Button>
+      </div>
+
+      <MediaPickerModal
+        open={pickerOpen}
+        onOpenChange={setPickerOpen}
+        onSelect={handleLibraryPick}
+        multiple={true}
+      />
+    </div>
   );
 }
 
@@ -1322,6 +1517,36 @@ function FieldRow({
     case "json":
       return (
         <JsonFieldEditor
+          fid={fid}
+          def={def}
+          value={v}
+          onChange={setLeaf}
+        />
+      );
+    case "select": {
+      const opts = def.options ?? [];
+      const currentVal = typeof v === "string" ? v : "";
+      return (
+        <div className="min-w-0 space-y-2">
+          <FieldLabelLine htmlFor={fid} def={def} />
+          <Select value={currentVal} onValueChange={setLeaf}>
+            <SelectTrigger id={fid} className="h-10 w-full bg-background text-sm">
+              <SelectValue placeholder="Pick an option" />
+            </SelectTrigger>
+            <SelectContent>
+              {opts.map((opt) => (
+                <SelectItem key={opt} value={opt}>
+                  {opt}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      );
+    }
+    case "multi_image":
+      return (
+        <MultiImageFieldEditor
           fid={fid}
           def={def}
           value={v}

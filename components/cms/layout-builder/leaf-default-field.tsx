@@ -19,6 +19,7 @@ export function LayoutBuilderLeafDefaultField({
   block,
   onChange,
   onLinkChange,
+  onSelectOptionsChange,
 }: {
   block: SectionBlock;
   onChange: (id: string, value: string | undefined) => void;
@@ -26,6 +27,7 @@ export function LayoutBuilderLeafDefaultField({
     id: string,
     next: { value: string; href: string; target: string }
   ) => void;
+  onSelectOptionsChange?: (id: string, options: string[]) => void;
 }) {
   const id = block.id;
   const v = block.defaultStr;
@@ -34,8 +36,8 @@ export function LayoutBuilderLeafDefaultField({
     block.type === "svgcode" && typeof v === "string" && v.trim() ? "visual" : "code"
   );
 
-  if (block.type === "image" || block.type === "icon_image") {
-    // Images/icon images are always selected or pasted at edit time — no default value needed.
+  if (block.type === "image" || block.type === "icon_image" || block.type === "multi_image") {
+    // Images/icon images/multi images are always selected or pasted at edit time — no default value needed.
     return null;
   }
 
@@ -355,6 +357,50 @@ export function LayoutBuilderLeafDefaultField({
     );
   }
 
+  if (block.type === "select") {
+    const currentDefault = block.defaultStr ?? "none";
+    const optionsList = block.options ?? [];
+
+    return (
+      <div className="max-w-full space-y-3 rounded-lg border bg-muted/20 p-3">
+        <div className="space-y-1.5">
+          <Label htmlFor={`cms-layout-select-options-${id}`} className="text-xs font-medium text-foreground">
+            Allowed Options (comma-separated list)
+          </Label>
+          <SelectOptionsInput
+            id={id}
+            options={block.options}
+            onChange={(opts) => onSelectOptionsChange?.(id, opts)}
+          />
+        </div>
+
+        {optionsList.length > 0 && (
+          <div className="space-y-1.5">
+            <Label htmlFor={`cms-layout-select-default-${id}`} className="text-xs font-medium text-foreground">
+              Default Selection (optional)
+            </Label>
+            <Select
+              value={currentDefault}
+              onValueChange={(val) => onChange(id, val === "none" ? undefined : val)}
+            >
+              <SelectTrigger id={`cms-layout-select-default-${id}`} className="h-8 w-full bg-background text-xs">
+                <SelectValue placeholder="Pick a default option" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">None</SelectItem>
+                {optionsList.map((opt) => (
+                  <SelectItem key={opt} value={opt} className="text-xs">
+                    {opt}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+      </div>
+    );
+  }
+
   if (block.type === "icon") {
     return (
       <div className="flex min-w-0 flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-2">
@@ -387,5 +433,55 @@ export function LayoutBuilderLeafDefaultField({
         spellCheck={false}
       />
     </div>
+  );
+}
+
+function areArraysEqual(a?: string[], b?: string[]) {
+  if (a === b) return true;
+  if (!a || !b) return false;
+  if (a.length !== b.length) return false;
+  return a.every((val, index) => val === b[index]);
+}
+
+interface SelectOptionsInputProps {
+  id: string;
+  options: string[] | undefined;
+  onChange: (options: string[]) => void;
+}
+
+function SelectOptionsInput({ id, options, onChange }: SelectOptionsInputProps) {
+  const [localText, setLocalText] = useState(() => (options ?? []).join(", "));
+  const [prevOptions, setPrevOptions] = useState(options);
+
+  if (options !== prevOptions) {
+    const parsedLocal = localText
+      .split(",")
+      .map((o) => o.trim())
+      .filter(Boolean);
+    if (!areArraysEqual(parsedLocal, options)) {
+      setLocalText((options ?? []).join(", "));
+    }
+    setPrevOptions(options);
+  }
+
+  const handleChange = (newVal: string) => {
+    setLocalText(newVal);
+    const parsed = newVal
+      .split(",")
+      .map((o) => o.trim())
+      .filter(Boolean);
+    onChange(parsed);
+  };
+
+  return (
+    <Input
+      id={`cms-layout-select-options-${id}`}
+      value={localText}
+      placeholder="e.g. Red, Green, Blue"
+      onChange={(e) => handleChange(e.target.value)}
+      className="h-8 text-xs bg-background"
+      spellCheck={false}
+      autoComplete="off"
+    />
   );
 }

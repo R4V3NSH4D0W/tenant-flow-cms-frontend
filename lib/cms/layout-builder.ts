@@ -39,7 +39,9 @@ export type SectionBlockType =
   | "collection_ref"
   | "array"
   | "object"
-  | "json";
+  | "json"
+  | "select"
+  | "multi_image";
 
 export interface SectionBlock {
   id: string;
@@ -63,6 +65,8 @@ export interface SectionBlock {
   multiple?: boolean;
   /** When true, exported as `required: true` in schema JSON (editors must fill before save). */
   required?: boolean;
+  /** Predefined options for `select` type. */
+  options?: string[];
 }
 
 export interface SectionTool {
@@ -84,6 +88,7 @@ export interface CustomToolTemplateNode {
   collectionKey?: string;
   multiple?: boolean;
   required?: boolean;
+  options?: string[];
 }
 
 export const SECTION_TOOLS: SectionTool[] = [
@@ -220,6 +225,20 @@ export const SECTION_TOOLS: SectionTool[] = [
     icon: FiBox,
     group: "structure",
   },
+  {
+    id: "select",
+    name: "Select",
+    description: "Dropdown list of predefined options",
+    icon: FiList,
+    group: "primitive",
+  },
+  {
+    id: "multi_image",
+    name: "Multi Image",
+    description: "List of multiple images (gallery / slider)",
+    icon: FiImage,
+    group: "content",
+  },
 ];
 
 export const TYPE_LABEL: Record<SectionBlockType, string> = {
@@ -242,6 +261,8 @@ export const TYPE_LABEL: Record<SectionBlockType, string> = {
   array: "Array",
   object: "Object",
   json: "JSON",
+  select: "Select",
+  multi_image: "Multi Image",
 };
 
 export const TYPE_SHORT: Record<SectionBlockType, string> = {
@@ -264,6 +285,8 @@ export const TYPE_SHORT: Record<SectionBlockType, string> = {
   array: "arr",
   object: "obj",
   json: "jsn",
+  select: "sel",
+  multi_image: "mimg",
 };
 
 export const GROUP_LABEL: Record<SectionTool["group"], string> = {
@@ -289,6 +312,8 @@ const ROOT_DEFAULT_KEY: Partial<Record<SectionBlockType, string>> = {
   array: "items",
   object: "object",
   json: "json",
+  select: "select",
+  multi_image: "images",
 };
 
 /** Default keys inside containers (depth ≥ 1). */
@@ -312,6 +337,8 @@ const NESTED_DEFAULT_KEY: Record<SectionBlockType, string> = {
   array: "items",
   object: "object",
   json: "json",
+  select: "select",
+  multi_image: "images",
 };
 
 function uniqueKey(base: string, existing: Set<string>): string {
@@ -693,6 +720,26 @@ export function updateBlockCollectionMultiple(
   });
 }
 
+export function updateBlockSelectOptions(
+  blocks: SectionBlock[],
+  id: string,
+  options: string[]
+): SectionBlock[] {
+  return blocks.map((b) => {
+    if (b.id === id) {
+      if (b.type !== "select") return b;
+      return { ...b, options };
+    }
+    if (isContainer(b.type)) {
+      return {
+        ...b,
+        children: updateBlockSelectOptions(b.children, id, options),
+      };
+    }
+    return b;
+  });
+}
+
 export function duplicateKeysAmong(blocks: SectionBlock[]): Set<string> {
   const counts = new Map<string, number>();
   for (const b of blocks) {
@@ -821,6 +868,17 @@ function blockToExportJson(block: SectionBlock): Record<string, unknown> {
       collectionKey: block.collectionKey?.trim() || "testimonials",
       multiple: block.multiple !== false,
     };
+    if (block.required) out.required = true;
+    return out;
+  }
+  if (block.type === "select") {
+    const out: Record<string, unknown> = {
+      type: "select",
+      key: block.key.trim(),
+      options: block.options ?? [],
+    };
+    const d = leafDefaultToExport(block.type, block.defaultStr);
+    if (d !== undefined) out.default = d;
     if (block.required) out.required = true;
     return out;
   }

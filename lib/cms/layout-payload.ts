@@ -11,6 +11,7 @@ export type LayoutFieldDef = {
   fields?: LayoutFieldDef[];
   collectionKey?: string;
   multiple?: boolean;
+  options?: string[];
   /** Optional default from layout schema (leaf fields). */
   default?: unknown;
   /** When true, page editors must fill this field before save (see `validateRequiredLayoutValues`). */
@@ -44,6 +45,9 @@ function emptyLeafValue(type: string): unknown {
       return "";
     case "json":
       return {};
+    case "multi_image":
+      return [];
+    case "select":
     case "title":
     case "description":
     case "textarea":
@@ -102,6 +106,21 @@ function normalizeLeafDefault(type: string, raw: unknown): unknown {
       }
       return raw;
     }
+    case "select":
+      return raw == null ? "" : String(raw).trim();
+    case "multi_image":
+      if (Array.isArray(raw)) {
+        return raw.filter((v): v is string => typeof v === "string");
+      }
+      if (typeof raw === "string") {
+        try {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) return parsed.filter((v): v is string => typeof v === "string");
+        } catch {
+          if (raw.trim()) return [raw.trim()];
+        }
+      }
+      return [];
     case "title":
     case "description":
     case "textarea":
@@ -192,6 +211,11 @@ export function parseFieldDefs(raw: unknown): LayoutFieldDef[] {
     if (typeof o.multiple === "boolean") {
       def.multiple = o.multiple;
     }
+    if (Array.isArray(o.options)) {
+      def.options = o.options
+        .map((opt) => (typeof opt === "string" ? opt.trim() : String(opt ?? "").trim()))
+        .filter(Boolean);
+    }
     if (Object.prototype.hasOwnProperty.call(o, "default")) {
       def.default = o.default;
     }
@@ -255,6 +279,8 @@ const VALID_SECTION_BLOCK_TYPES = new Set<string>([
   "array",
   "object",
   "json",
+  "select",
+  "multi_image",
 ]);
 
 function isFullSchemaShape(obj: unknown): obj is Record<string, unknown> {
@@ -420,6 +446,17 @@ export function layoutFieldDefsToHydratedBlocks(
         required,
       };
     }
+    if (def.type === "select") {
+      return {
+        id,
+        type: def.type,
+        key: def.key,
+        children: [],
+        options: def.options ?? [],
+        defaultStr: leafDefaultToBuilderString(def.type, def.default),
+        required,
+      };
+    }
     return {
       id,
       type: def.type,
@@ -462,6 +499,17 @@ function isLeafValueEmpty(type: string, value: unknown): boolean {
       if (value === undefined || value === null) return true;
       if (typeof value === "string") return isHtmlStringVisuallyEmpty(value);
       return String(value).trim() === "";
+    case "multi_image": {
+      if (Array.isArray(value)) {
+        const validUrls = value.filter(
+          (v): v is string => typeof v === "string" && v.trim() !== ""
+        );
+        return validUrls.length === 0;
+      }
+      if (value === undefined || value === null) return true;
+      return String(value).trim() === "";
+    }
+    case "select":
     case "title":
     case "textarea":
     case "badge":

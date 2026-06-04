@@ -52,6 +52,7 @@ function LayoutBuilderBlockRow({
   onRequiredChange,
   onCollectionKeyChange,
   onCollectionMultipleChange,
+  onSelectOptionsChange,
   childrenBelow,
 }: {
   block: SectionBlock;
@@ -72,6 +73,7 @@ function LayoutBuilderBlockRow({
   onRequiredChange: (id: string, required: boolean) => void;
   onCollectionKeyChange: (id: string, key: string) => void;
   onCollectionMultipleChange: (id: string, multiple: boolean) => void;
+  onSelectOptionsChange?: (id: string, options: string[]) => void;
   childrenBelow?: ReactNode;
 }) {
   const isLeaf = !isContainer(block.type);
@@ -241,12 +243,18 @@ function LayoutBuilderBlockRow({
                 </p>
               </div>
             ) : null}
-            {isLeaf && block.type !== "collection_ref" && block.type !== "image" && block.type !== "icon_image" && block.type !== "file" ? (
+            {isLeaf &&
+            block.type !== "collection_ref" &&
+            block.type !== "image" &&
+            block.type !== "icon_image" &&
+            block.type !== "multi_image" &&
+            block.type !== "file" ? (
               <div className="max-w-full border-t border-dashed border-muted-foreground/20 pt-2">
                 <LayoutBuilderLeafDefaultField
                   block={block}
                   onChange={onDefaultChange}
                   onLinkChange={onDefaultLinkChange}
+                  onSelectOptionsChange={onSelectOptionsChange}
                 />
               </div>
             ) : null}
@@ -285,6 +293,7 @@ export function LayoutBuilderBlockBranch({
   onRequiredChange,
   onCollectionKeyChange,
   onCollectionMultipleChange,
+  onSelectOptionsChange,
   onMoveBlock,
   customTools,
 }: {
@@ -315,6 +324,7 @@ export function LayoutBuilderBlockBranch({
   onRequiredChange: (id: string, required: boolean) => void;
   onCollectionKeyChange: (id: string, key: string) => void;
   onCollectionMultipleChange: (id: string, multiple: boolean) => void;
+  onSelectOptionsChange?: (id: string, options: string[]) => void;
   onMoveBlock: (id: string, direction: "up" | "down") => void;
   customTools?: CmsCustomTool[];
 }) {
@@ -371,6 +381,7 @@ export function LayoutBuilderBlockBranch({
                 onRequiredChange={onRequiredChange}
                 onCollectionKeyChange={onCollectionKeyChange}
                 onCollectionMultipleChange={onCollectionMultipleChange}
+                onSelectOptionsChange={onSelectOptionsChange}
                 onMoveBlock={onMoveBlock}
                 customTools={customTools}
               />
@@ -409,6 +420,7 @@ export function LayoutBuilderBlockBranch({
       onRequiredChange={onRequiredChange}
       onCollectionKeyChange={onCollectionKeyChange}
       onCollectionMultipleChange={onCollectionMultipleChange}
+      onSelectOptionsChange={onSelectOptionsChange}
       childrenBelow={nestedSection}
     />
   );
