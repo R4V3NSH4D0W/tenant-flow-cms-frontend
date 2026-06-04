@@ -138,7 +138,8 @@ function LayoutSlotBody({
 
     const merged = mergeLayoutPayloadTemplate(
       slot.configValues,
-      templatePayload
+      templatePayload,
+      defs
     );
     // deepEqual is key-order-insensitive — avoids false positives from
     // mergeLayoutPayloadTemplate returning objects with different key ordering.
@@ -272,16 +273,22 @@ function SortableLayoutSlotCard({
   onRemove: (id: string) => void;
 }) {
   const [expanded, setExpanded] = useState(defaultExpanded);
+  const [prevExpandSignal, setPrevExpandSignal] = useState(expandAllSignal);
+  const [prevCollapseSignal, setPrevCollapseSignal] = useState(collapseAllSignal);
 
-  useEffect(() => {
-    if (expandAllSignal <= 0) return;
-    setExpanded(true);
-  }, [expandAllSignal]);
+  if (expandAllSignal !== prevExpandSignal) {
+    setPrevExpandSignal(expandAllSignal);
+    if (expandAllSignal > 0) {
+      setExpanded(true);
+    }
+  }
 
-  useEffect(() => {
-    if (collapseAllSignal <= 0) return;
-    setExpanded(false);
-  }, [collapseAllSignal]);
+  if (collapseAllSignal !== prevCollapseSignal) {
+    setPrevCollapseSignal(collapseAllSignal);
+    if (collapseAllSignal > 0) {
+      setExpanded(false);
+    }
+  }
 
   const {
     attributes,

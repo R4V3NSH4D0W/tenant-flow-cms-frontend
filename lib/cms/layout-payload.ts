@@ -42,6 +42,8 @@ function emptyLeafValue(type: string): unknown {
       return { value: "", href: "", target: "_self" };
     case "collection_ref":
       return "";
+    case "json":
+      return {};
     case "title":
     case "description":
     case "textarea":
@@ -90,6 +92,16 @@ function normalizeLeafDefault(type: string, raw: unknown): unknown {
           .filter(Boolean);
       }
       return raw == null ? "" : String(raw);
+    case "json": {
+      if (typeof raw === "string") {
+        try {
+          return JSON.parse(raw);
+        } catch {
+          return raw;
+        }
+      }
+      return raw;
+    }
     case "title":
     case "description":
     case "textarea":
@@ -242,6 +254,7 @@ const VALID_SECTION_BLOCK_TYPES = new Set<string>([
   "collection_ref",
   "array",
   "object",
+  "json",
 ]);
 
 function isFullSchemaShape(obj: unknown): obj is Record<string, unknown> {
@@ -362,6 +375,11 @@ function leafDefaultToBuilderString(
     const n = Number(raw);
     return Number.isFinite(n) ? String(n) : undefined;
   }
+  if (type === "json") {
+    if (raw == null) return undefined;
+    if (typeof raw === "string") return raw;
+    return JSON.stringify(raw, null, 2);
+  }
   return raw == null ? undefined : String(raw);
 }
 
@@ -453,6 +471,7 @@ function isLeafValueEmpty(type: string, value: unknown): boolean {
     case "icon":
     case "url":
     case "date":
+    case "json":
     default:
       if (value === undefined || value === null) return true;
       if (typeof value === "string") return value.trim() === "";
@@ -657,10 +676,70 @@ function mergeUnknown(existing: unknown, template: unknown): unknown {
   return template;
 }
 
+function mergeWithDefs(
+  existing: unknown,
+  template: unknown,
+  defs: LayoutFieldDef[]
+): unknown {
+  if (existing === undefined || existing === null) return template;
+  if (!defs || defs.length === 0) return existing;
+
+  const exObj =
+    existing && typeof existing === "object" && !Array.isArray(existing)
+      ? (existing as Record<string, unknown>)
+      : {};
+  const tplObj =
+    template && typeof template === "object" && !Array.isArray(template)
+      ? (template as Record<string, unknown>)
+      : {};
+
+  const out: Record<string, unknown> = {};
+
+  for (const def of defs) {
+    const key = def.key?.trim();
+    if (!key) continue;
+
+    const exVal = exObj[key];
+    const tplVal = tplObj[key];
+
+    if (def.type === "json") {
+      out[key] = exVal !== undefined ? exVal : tplVal;
+    } else if (def.type === "object") {
+      out[key] = mergeWithDefs(exVal, tplVal, def.fields ?? []);
+    } else if (def.type === "array") {
+      if (!Array.isArray(exVal)) {
+        out[key] = tplVal;
+      } else {
+        const itemTpl = Array.isArray(tplVal) ? tplVal[0] : undefined;
+        out[key] = exVal.map((item) =>
+          mergeWithDefs(item, itemTpl, def.fields ?? [])
+        );
+      }
+    } else {
+      out[key] = exVal !== undefined && exVal !== null ? exVal : tplVal;
+    }
+  }
+
+  return out;
+}
+
 export function mergeLayoutPayloadTemplate(
   existing: Record<string, unknown>,
-  template: Record<string, unknown>
+  template: Record<string, unknown>,
+  defs?: LayoutFieldDef[]
 ): Record<string, unknown> {
+  if (defs) {
+    const rootKey = Object.keys(template)[0];
+    if (rootKey) {
+      const exInner = existing[rootKey];
+      const tplInner = template[rootKey];
+      const mergedInner = mergeWithDefs(exInner, tplInner, defs);
+      return {
+        ...existing,
+        [rootKey]: mergedInner,
+      };
+    }
+  }
   return mergeUnknown(existing, template) as Record<string, unknown>;
 }
 

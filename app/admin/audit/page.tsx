@@ -23,7 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ShieldCheck, Search, Code, LayoutDashboard } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { format } from "date-fns";
 import {
   AuditLogFilters,
@@ -97,14 +97,11 @@ export default function AdminAuditPage() {
   const [pageSize, setPageSize] = useState(20);
   const [pageInput, setPageInput] = useState("1");
 
-  useEffect(() => {
-    setPage(1);
-  }, [filters]);
-
-  useEffect(() => {
-    setPage(1);
-    setPageInput("1");
-  }, [pageSize]);
+  const [prevPage, setPrevPage] = useState(page);
+  if (page !== prevPage) {
+    setPrevPage(page);
+    setPageInput(String(page));
+  }
 
   const { data, isLoading } = useQuery({
     queryKey: ["admin-audit", filters, page, pageSize],
@@ -119,22 +116,25 @@ export default function AdminAuditPage() {
     total: 0,
     totalPages: 1,
   };
+
+  const serverPage = pagination.page;
+  const [prevServerPage, setPrevServerPage] = useState(serverPage);
+  if (serverPage !== prevServerPage) {
+    setPrevServerPage(serverPage);
+    if (serverPage !== page) {
+      setPage(serverPage);
+    }
+    setPageInput(String(serverPage));
+  }
+
+  if (pagination.totalPages > 0 && page > pagination.totalPages && !isLoading) {
+    setPage(pagination.totalPages);
+    setPageInput(String(pagination.totalPages));
+  }
+
   const start =
     pagination.total === 0 ? 0 : (pagination.page - 1) * pagination.limit + 1;
   const end = Math.min(pagination.page * pagination.limit, pagination.total);
-
-  useEffect(() => {
-    if (pagination.page !== page) {
-      setPage(pagination.page);
-    }
-    setPageInput(String(pagination.page));
-  }, [pagination.page, page]);
-
-  useEffect(() => {
-    if (pagination.totalPages > 0 && page > pagination.totalPages) {
-      setPage(pagination.totalPages);
-    }
-  }, [page, pagination.totalPages]);
 
   function goToPage(nextValue: string) {
     const numericValue = Number(nextValue);
@@ -167,7 +167,13 @@ export default function AdminAuditPage() {
       </header>
 
       <div className="space-y-4">
-        <AuditLogFilters filters={filters} onChange={setFilters} />
+        <AuditLogFilters
+          filters={filters}
+          onChange={(newFilters) => {
+            setFilters(newFilters);
+            setPage(1);
+          }}
+        />
 
         <div className="rounded-xl border border-border/60 bg-card shadow-sm overflow-hidden">
           <Table>
@@ -296,7 +302,11 @@ export default function AdminAuditPage() {
               </span>
               <Select
                 value={String(pageSize)}
-                onValueChange={(value) => setPageSize(Number(value))}
+                onValueChange={(value) => {
+                  setPageSize(Number(value));
+                  setPage(1);
+                  setPageInput("1");
+                }}
               >
                 <SelectTrigger className="h-8 w-24 text-xs">
                   <SelectValue placeholder="Rows" />

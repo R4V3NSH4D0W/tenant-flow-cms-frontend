@@ -42,7 +42,9 @@ export function CmsSiteChromeLayoutSections({
   const searchParams = useSearchParams();
   const consumedAddLayoutSearchRef = useRef<string | null>(null);
   const sectionsRef = useRef(sections);
-  sectionsRef.current = sections;
+  useEffect(() => {
+    sectionsRef.current = sections;
+  });
 
   const { data: layoutsRes, isLoading: layoutsLoading } = useCmsLayouts();
   const layouts = layoutsRes?.layouts ?? [];

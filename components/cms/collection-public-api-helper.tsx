@@ -56,22 +56,30 @@ export function CollectionPublicApiHelper({
   useEffect(() => {
     const slug = projectSlug?.trim();
     if (!slug) {
-      setHydrated(true);
+      setTimeout(() => setHydrated(true), 0);
       return;
     }
+    let matchedLookupKey = "slug";
+    let matchedSample = "example-value";
     try {
       const raw = localStorage.getItem(lookupStorageKey(slug, collectionKey));
       if (raw) {
         const p = JSON.parse(raw) as { lookupKey?: string; sample?: string };
         if (typeof p.lookupKey === "string" && VALID_LOOKUP.has(p.lookupKey)) {
-          setLookupKey(p.lookupKey);
+          matchedLookupKey = p.lookupKey;
         }
-        if (typeof p.sample === "string") setSample(p.sample);
+        if (typeof p.sample === "string") {
+          matchedSample = p.sample;
+        }
       }
     } catch {
       /* ignore */
     }
-    setHydrated(true);
+    setTimeout(() => {
+      setLookupKey(matchedLookupKey);
+      setSample(matchedSample);
+      setHydrated(true);
+    }, 0);
   }, [collectionKey, projectSlug]);
 
   useEffect(() => {

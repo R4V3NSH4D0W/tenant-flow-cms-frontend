@@ -3,7 +3,6 @@
 import {
   Suspense,
   useCallback,
-  useEffect,
   useState,
   type Dispatch,
   type SetStateAction,
@@ -90,10 +89,12 @@ export default function CmsFooterPage() {
   const { data, isLoading } = useCmsFooterConfig();
   const update = useUpdateCmsFooterConfig();
   const [draft, setDraft] = useState<CmsFooterConfig | null>(null);
+  const [prevData, setPrevData] = useState<CmsFooterConfig | undefined>(undefined);
 
-  useEffect(() => {
-    if (data) setDraft(data);
-  }, [data]);
+  if (data !== prevData) {
+    setPrevData(data);
+    setDraft(data ?? null);
+  }
 
   async function handleSave() {
     if (!draft) return;

@@ -591,6 +591,69 @@ function SortableObjectFieldRow({
   );
 }
 
+function JsonFieldEditor({
+  fid,
+  def,
+  value,
+  onChange,
+}: {
+  fid: string;
+  def: LayoutFieldDef;
+  value: unknown;
+  onChange: (val: unknown) => void;
+}) {
+  const [prevVal, setPrevVal] = useState(value);
+  const [text, setText] = useState(() => {
+    if (value == null) return "";
+    if (typeof value === "string") return value;
+    return JSON.stringify(value, null, 2);
+  });
+  const [error, setError] = useState<string | null>(null);
+
+  if (value !== prevVal) {
+    setPrevVal(value);
+    setText(value == null ? "" : (typeof value === "string" ? value : JSON.stringify(value, null, 2)));
+    setError(null);
+  }
+
+  const handleChange = (newVal: string) => {
+    setText(newVal);
+    if (!newVal.trim()) {
+      setError(null);
+      onChange(null);
+      return;
+    }
+    try {
+      const parsed = JSON.parse(newVal);
+      setError(null);
+      onChange(parsed);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Invalid JSON");
+    }
+  };
+
+  return (
+    <div className="min-w-0 space-y-2">
+      <FieldLabelLine htmlFor={fid} def={def} />
+      <Textarea
+        id={fid}
+        className="w-full min-h-[120px] font-mono text-xs resize-y leading-normal"
+        value={text}
+        onChange={(e) => handleChange(e.target.value)}
+        placeholder='{ "key": "value" }'
+        spellCheck={false}
+      />
+      {error ? (
+        <p className="text-[11px] text-destructive">Invalid JSON: {error}</p>
+      ) : (
+        <p className="text-[11px] text-muted-foreground">
+          Enter valid JSON code. This will be stored as structured JSON.
+        </p>
+      )}
+    </div>
+  );
+}
+
 function ObjectFieldEditor({
   def,
   value,
@@ -951,6 +1014,9 @@ function FieldRow({
     setCollectionRefViewResetState(collectionRefViewResetKey);
     setCollectionRefVisibleCount(COLLECTION_REFERENCE_VISIBLE_LIMIT);
   }
+  const [svgMode, setSvgMode] = useState<"visual" | "code">(
+    def.type === "svgcode" && typeof value[def.key] === "string" && String(value[def.key] ?? "").trim() ? "visual" : "code"
+  );
   const collectionQuery = useCmsCollectionItems(
     collectionKey,
     {
@@ -1184,21 +1250,83 @@ function FieldRow({
           />
         </div>
       );
-    case "svgcode":
+    case "svgcode": {
+      const svgVal = typeof v === "string" ? v : "";
       return (
         <div className="min-w-0 space-y-2">
-          <FieldLabelLine htmlFor={fid} def={def} />
-          <Textarea
-            id={fid}
-            className="w-full min-h-[120px] font-mono text-xs resize-y leading-normal"
-            value={typeof v === "string" ? v : ""}
-            onChange={(e) => setLeaf(e.target.value)}
-            placeholder='<svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+          <div className="flex items-center justify-between">
+            <FieldLabelLine htmlFor={fid} def={def} />
+            <div className="flex rounded-md border bg-muted/40 p-0.5">
+              <Button
+                type="button"
+                variant={svgMode === "visual" ? "secondary" : "ghost"}
+                size="sm"
+                className="h-7 px-2 text-xs font-medium"
+                onClick={() => setSvgMode("visual")}
+              >
+                Visual
+              </Button>
+              <Button
+                type="button"
+                variant={svgMode === "code" ? "secondary" : "ghost"}
+                size="sm"
+                className="h-7 px-2 text-xs font-medium"
+                onClick={() => setSvgMode("code")}
+              >
+                Code
+              </Button>
+            </div>
+          </div>
+
+          {svgMode === "visual" ? (
+            <div className="flex flex-col items-center justify-center rounded-lg border border-dashed bg-muted/15 p-6 text-center min-h-[120px]">
+              {svgVal.trim() ? (
+                <div 
+                  className="flex items-center justify-center p-3 border rounded bg-background shadow-xs [&>svg]:w-12 [&>svg]:h-12 [&>svg]:text-foreground [&>svg]:max-w-full [&>svg]:max-h-full"
+                  dangerouslySetInnerHTML={{ __html: svgVal }}
+                />
+              ) : (
+                <div className="text-center">
+                  <p className="text-xs text-muted-foreground mb-2">No SVG code added yet.</p>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => setSvgMode("code")}
+                  >
+                    Paste SVG Code
+                  </Button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-1.5">
+              <Textarea
+                id={fid}
+                className="w-full min-h-[120px] font-mono text-xs resize-y leading-normal"
+                value={svgVal}
+                onChange={(e) => setLeaf(e.target.value)}
+                placeholder='<svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
   <path strokeLinecap="round" strokeLinejoin="round" d="..." />
 </svg>'
-            spellCheck={false}
-          />
+                spellCheck={false}
+              />
+              <p className="text-[11px] text-muted-foreground">
+                Paste raw SVG code (including `&lt;svg&gt;` wrapper). Switch to Visual tab to see it.
+              </p>
+            </div>
+          )}
         </div>
+      );
+    }
+    case "json":
+      return (
+        <JsonFieldEditor
+          fid={fid}
+          def={def}
+          value={v}
+          onChange={setLeaf}
+        />
       );
     case "icon":
       return (

@@ -3,7 +3,6 @@
 import {
   Suspense,
   useCallback,
-  useEffect,
   useState,
   type Dispatch,
   type SetStateAction,
@@ -92,10 +91,12 @@ export default function CmsAnnouncementsPage() {
   const { data, isLoading } = useCmsAnnouncementsConfig();
   const update = useUpdateCmsAnnouncementsConfig();
   const [draft, setDraft] = useState<CmsAnnouncementsConfig | null>(null);
+  const [prevData, setPrevData] = useState<CmsAnnouncementsConfig | undefined>(undefined);
 
-  useEffect(() => {
-    if (data) setDraft(data);
-  }, [data]);
+  if (data !== prevData) {
+    setPrevData(data);
+    setDraft(data ?? null);
+  }
 
   async function handleSave() {
     if (!draft) return;

@@ -1,9 +1,10 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
@@ -29,9 +30,12 @@ export function LayoutBuilderLeafDefaultField({
   const id = block.id;
   const v = block.defaultStr;
   const colorInputRef = useRef<HTMLInputElement>(null);
+  const [svgMode, setSvgMode] = useState<"visual" | "code">(
+    block.type === "svgcode" && typeof v === "string" && v.trim() ? "visual" : "code"
+  );
 
-  if (block.type === "image" || block.type === "icon_image" || block.type === "svgcode") {
-    // Images/icon images/svgcodes are always selected or pasted at edit time — no default value needed.
+  if (block.type === "image" || block.type === "icon_image") {
+    // Images/icon images are always selected or pasted at edit time — no default value needed.
     return null;
   }
 
@@ -233,6 +237,120 @@ export function LayoutBuilderLeafDefaultField({
           className="min-h-[4.5rem] resize-y font-mono text-xs"
           spellCheck={false}
         />
+      </div>
+    );
+  }
+
+  if (block.type === "svgcode") {
+    const svgVal = typeof v === "string" ? v : "";
+    return (
+      <div className="max-w-full space-y-2">
+        <div className="flex items-center justify-between">
+          <p className="text-xs text-muted-foreground">Default SVG Code (optional)</p>
+          <div className="flex rounded-md border bg-muted/40 p-0.5">
+            <Button
+              type="button"
+              variant={svgMode === "visual" ? "secondary" : "ghost"}
+              size="sm"
+              className="h-6 px-2 text-[10px] font-medium"
+              onClick={() => setSvgMode("visual")}
+            >
+              Visual
+            </Button>
+            <Button
+              type="button"
+              variant={svgMode === "code" ? "secondary" : "ghost"}
+              size="sm"
+              className="h-6 px-2 text-[10px] font-medium"
+              onClick={() => setSvgMode("code")}
+            >
+              Code
+            </Button>
+          </div>
+        </div>
+
+        {svgMode === "visual" ? (
+          <div className="flex flex-col items-center justify-center rounded-lg border border-dashed bg-muted/15 p-4 text-center min-h-[96px]">
+            {svgVal.trim() ? (
+              <div 
+                className="flex items-center justify-center p-2.5 border rounded bg-background shadow-xs [&>svg]:w-10 [&>svg]:h-10 [&>svg]:text-foreground [&>svg]:max-w-full [&>svg]:max-h-full"
+                dangerouslySetInnerHTML={{ __html: svgVal }}
+              />
+            ) : (
+              <div className="text-center">
+                <p className="text-[11px] text-muted-foreground mb-1.5">No default SVG code.</p>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  size="sm" 
+                  className="h-7 text-xs"
+                  onClick={() => setSvgMode("code")}
+                >
+                  Paste SVG Code
+                </Button>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="space-y-1">
+            <Textarea
+              id={`cms-layout-svgcode-def-${id}`}
+              className="w-full min-h-[100px] font-mono text-xs resize-y leading-normal"
+              value={svgVal}
+              onChange={(e) => {
+                const t = e.target.value;
+                onChange(id, t === "" ? undefined : t);
+              }}
+              placeholder='<svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+  <path strokeLinecap="round" strokeLinejoin="round" d="..." />
+</svg>'
+              spellCheck={false}
+            />
+            <p className="text-[10px] text-muted-foreground">
+              Paste raw SVG code (including `&lt;svg&gt;` wrapper). Switch to Visual to preview it.
+            </p>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  if (block.type === "json") {
+    const jsonVal = typeof v === "string" ? v : "";
+    let localError: string | null = null;
+    if (jsonVal.trim()) {
+      try {
+        JSON.parse(jsonVal);
+      } catch (err) {
+        localError = err instanceof Error ? err.message : "Invalid JSON";
+      }
+    }
+
+    return (
+      <div className="max-w-full space-y-1.5">
+        <div className="flex items-center justify-between">
+          <p className="text-xs text-muted-foreground">Default JSON (optional)</p>
+        </div>
+        <Textarea
+          id={`cms-layout-json-def-${id}`}
+          className="w-full min-h-[100px] font-mono text-xs resize-y leading-normal"
+          value={jsonVal}
+          onChange={(e) => {
+            const t = e.target.value;
+            onChange(id, t === "" ? undefined : t);
+          }}
+          placeholder='{ "key": "value" }'
+          spellCheck={false}
+        />
+        {localError ? (
+          <p className="text-[10px] text-destructive">
+            Invalid JSON: {localError}
+          </p>
+        ) : (
+          <p className="text-[10px] text-muted-foreground">
+            Must be valid JSON code. Leave blank for empty object `{}`.
+          </p>
+        )}
       </div>
     );
   }

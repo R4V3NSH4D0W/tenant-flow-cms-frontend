@@ -3,7 +3,6 @@
 import {
   Suspense,
   useCallback,
-  useEffect,
   useState,
   type Dispatch,
   type SetStateAction,
@@ -89,10 +88,12 @@ export default function CmsNavigationPage() {
   const { data, isLoading } = useCmsNavigationConfig();
   const update = useUpdateCmsNavigationConfig();
   const [draft, setDraft] = useState<CmsNavigationConfig | null>(null);
+  const [prevData, setPrevData] = useState<CmsNavigationConfig | undefined>(undefined);
 
-  useEffect(() => {
-    if (data) setDraft(data);
-  }, [data]);
+  if (data !== prevData) {
+    setPrevData(data);
+    setDraft(data ?? null);
+  }
 
   async function handleSave() {
     if (!draft) return;

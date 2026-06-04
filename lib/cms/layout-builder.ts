@@ -3,6 +3,7 @@ import type { IconType } from "react-icons";
 import {
   FiBox,
   FiCalendar,
+  FiCode,
   FiDatabase,
   FiDroplet,
   FiExternalLink,
@@ -37,7 +38,8 @@ export type SectionBlockType =
   | "link"
   | "collection_ref"
   | "array"
-  | "object";
+  | "object"
+  | "json";
 
 export interface SectionBlock {
   id: string;
@@ -198,6 +200,13 @@ export const SECTION_TOOLS: SectionTool[] = [
     group: "primitive",
   },
   {
+    id: "json",
+    name: "JSON",
+    description: "Arbitrary JSON data (object, array, primitive)",
+    icon: FiCode,
+    group: "primitive",
+  },
+  {
     id: "array",
     name: "Array",
     description: "List of items — define item shape inside",
@@ -232,6 +241,7 @@ export const TYPE_LABEL: Record<SectionBlockType, string> = {
   collection_ref: "Collection ref",
   array: "Array",
   object: "Object",
+  json: "JSON",
 };
 
 export const TYPE_SHORT: Record<SectionBlockType, string> = {
@@ -253,6 +263,7 @@ export const TYPE_SHORT: Record<SectionBlockType, string> = {
   collection_ref: "ref",
   array: "arr",
   object: "obj",
+  json: "jsn",
 };
 
 export const GROUP_LABEL: Record<SectionTool["group"], string> = {
@@ -277,6 +288,7 @@ const ROOT_DEFAULT_KEY: Partial<Record<SectionBlockType, string>> = {
   collection_ref: "references",
   array: "items",
   object: "object",
+  json: "json",
 };
 
 /** Default keys inside containers (depth ≥ 1). */
@@ -299,6 +311,7 @@ const NESTED_DEFAULT_KEY: Record<SectionBlockType, string> = {
   collection_ref: "references",
   array: "items",
   object: "object",
+  json: "json",
 };
 
 function uniqueKey(base: string, existing: Set<string>): string {
