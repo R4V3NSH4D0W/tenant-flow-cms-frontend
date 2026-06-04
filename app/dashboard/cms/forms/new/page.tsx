@@ -12,6 +12,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import {
   ClipboardList,
@@ -43,6 +45,7 @@ interface FormSavePayload {
   emailTemplateReceiver: string | null;
   emailSubjectSender: string | null;
   emailTemplateSender: string | null;
+  emailEnabled: boolean;
 }
 
 interface InitialFormValues {
@@ -53,6 +56,7 @@ interface InitialFormValues {
   emailTemplateReceiver: string;
   emailSubjectSender: string;
   emailTemplateSender: string;
+  emailEnabled: boolean;
 }
 
 const DEFAULT_VALUES: InitialFormValues = {
@@ -66,6 +70,7 @@ const DEFAULT_VALUES: InitialFormValues = {
   emailTemplateReceiver: "",
   emailSubjectSender: "",
   emailTemplateSender: "",
+  emailEnabled: false,
 };
 
 // ─── Inner form (state initialized once from props — no useEffect needed) ────
@@ -92,6 +97,7 @@ function FormBuilderInner({
   const [emailTemplateReceiver, setEmailTemplateReceiver] = useState(initial.emailTemplateReceiver);
   const [emailSubjectSender, setEmailSubjectSender] = useState(initial.emailSubjectSender);
   const [emailTemplateSender, setEmailTemplateSender] = useState(initial.emailTemplateSender);
+  const [emailEnabled, setEmailEnabled] = useState(initial.emailEnabled);
 
   const slugify = (text: string) =>
     text
@@ -190,6 +196,7 @@ function FormBuilderInner({
       emailTemplateReceiver: emailTemplateReceiver.trim() || null,
       emailSubjectSender: emailSubjectSender.trim() || null,
       emailTemplateSender: emailTemplateSender.trim() || null,
+      emailEnabled,
     });
   };
 
@@ -374,72 +381,90 @@ function FormBuilderInner({
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6 pt-5">
-              <div className="space-y-4">
-                <h3 className="text-xs uppercase font-bold tracking-wider text-muted-foreground flex items-center gap-1.5">
-                  <span className="h-2 w-2 rounded-full bg-blue-500" /> Administrative Notification
-                </h3>
-                <div className="space-y-2">
-                  <label className="text-xs font-semibold text-muted-foreground">Notification Subject</label>
-                  <Input
-                    placeholder="New Form Submission: {{form_name}}"
-                    value={emailSubjectReceiver}
-                    onChange={(e) => setEmailSubjectReceiver(e.target.value)}
-                    className="h-9"
-                  />
+              <div className="flex items-center justify-between pb-4 border-b">
+                <div className="space-y-0.5">
+                  <Label htmlFor="email-enabled" className="text-sm font-semibold">Enable Email Service</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Send admin notifications and auto-replies upon submission.
+                  </p>
                 </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-semibold text-muted-foreground">HTML Body Layout</label>
-                  <Textarea
-                    placeholder="Provide HTML. Supports {{all_fields}} and custom variables."
-                    value={emailTemplateReceiver}
-                    onChange={(e) => setEmailTemplateReceiver(e.target.value)}
-                    rows={5}
-                    className="text-xs font-mono resize-y"
-                  />
-                </div>
+                <Switch
+                  id="email-enabled"
+                  checked={emailEnabled}
+                  onCheckedChange={setEmailEnabled}
+                />
               </div>
 
-              <div className="space-y-4 border-t pt-5">
-                <h3 className="text-xs uppercase font-bold tracking-wider text-muted-foreground flex items-center gap-1.5">
-                  <span className="h-2 w-2 rounded-full bg-emerald-500" /> Guest Confirmation Auto-Reply
-                </h3>
-                <div className="space-y-2">
-                  <label className="text-xs font-semibold text-muted-foreground">Confirmation Subject</label>
-                  <Input
-                    placeholder="We received your submission: {{form_name}}"
-                    value={emailSubjectSender}
-                    onChange={(e) => setEmailSubjectSender(e.target.value)}
-                    className="h-9"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-semibold text-muted-foreground">HTML Body Layout</label>
-                  <Textarea
-                    placeholder="Provide HTML. Sent automatically if guests fill in an 'email' field."
-                    value={emailTemplateSender}
-                    onChange={(e) => setEmailTemplateSender(e.target.value)}
-                    rows={5}
-                    className="text-xs font-mono resize-y"
-                  />
-                </div>
-              </div>
+              {emailEnabled && (
+                <>
+                  <div className="space-y-4">
+                    <h3 className="text-xs uppercase font-bold tracking-wider text-muted-foreground flex items-center gap-1.5">
+                      <span className="h-2 w-2 rounded-full bg-blue-500" /> Administrative Notification
+                    </h3>
+                    <div className="space-y-2">
+                      <label className="text-xs font-semibold text-muted-foreground">Notification Subject</label>
+                      <Input
+                        placeholder="New Form Submission: {{form_name}}"
+                        value={emailSubjectReceiver}
+                        onChange={(e) => setEmailSubjectReceiver(e.target.value)}
+                        className="h-9"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-semibold text-muted-foreground">HTML Body Layout</label>
+                      <Textarea
+                        placeholder="Provide HTML. Supports {{all_fields}} and custom variables."
+                        value={emailTemplateReceiver}
+                        onChange={(e) => setEmailTemplateReceiver(e.target.value)}
+                        rows={5}
+                        className="text-xs font-mono resize-y"
+                      />
+                    </div>
+                  </div>
 
-              <div className="rounded-lg bg-primary/5 p-3.5 border border-primary/10 text-[11px] leading-relaxed text-muted-foreground space-y-1">
-                <p className="font-semibold text-foreground flex items-center gap-1">
-                  <Sparkles className="size-3.5 text-primary" /> Template placeholders:
-                </p>
-                <ul className="list-disc pl-4 space-y-0.5">
-                  <li>
-                    <code>{"{{all_fields}}"}</code> : Renders a beautiful HTML layout table of all user submissions automatically
-                  </li>
-                  <li>
-                    <code>{"{{form_name}}"}</code> : Renders form name
-                  </li>
-                  <li>
-                    <code>{"{{field_key}}"}</code> : Renders individual values (e.g. <code>{"{{email}}"}</code>)
-                  </li>
-                </ul>
-              </div>
+                  <div className="space-y-4 border-t pt-5">
+                    <h3 className="text-xs uppercase font-bold tracking-wider text-muted-foreground flex items-center gap-1.5">
+                      <span className="h-2 w-2 rounded-full bg-emerald-500" /> Guest Confirmation Auto-Reply
+                    </h3>
+                    <div className="space-y-2">
+                      <label className="text-xs font-semibold text-muted-foreground">Confirmation Subject</label>
+                      <Input
+                        placeholder="We received your submission: {{form_name}}"
+                        value={emailSubjectSender}
+                        onChange={(e) => setEmailSubjectSender(e.target.value)}
+                        className="h-9"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-semibold text-muted-foreground">HTML Body Layout</label>
+                      <Textarea
+                        placeholder="Provide HTML. Sent automatically if guests fill in an 'email' field."
+                        value={emailTemplateSender}
+                        onChange={(e) => setEmailTemplateSender(e.target.value)}
+                        rows={5}
+                        className="text-xs font-mono resize-y"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="rounded-lg bg-primary/5 p-3.5 border border-primary/10 text-[11px] leading-relaxed text-muted-foreground space-y-1">
+                    <p className="font-semibold text-foreground flex items-center gap-1">
+                      <Sparkles className="size-3.5 text-primary" /> Template placeholders:
+                    </p>
+                    <ul className="list-disc pl-4 space-y-0.5">
+                      <li>
+                        <code>{"{{all_fields}}"}</code> : Renders a beautiful HTML layout table of all user submissions automatically
+                      </li>
+                      <li>
+                        <code>{"{{form_name}}"}</code> : Renders form name
+                      </li>
+                      <li>
+                        <code>{"{{field_key}}"}</code> : Renders individual values (e.g. <code>{"{{email}}"}</code>)
+                      </li>
+                    </ul>
+                  </div>
+                </>
+              )}
             </CardContent>
           </Card>
 
@@ -521,6 +546,7 @@ export default function FormBuilderPage() {
         emailTemplateReceiver: editData.form.emailTemplateReceiver ?? "",
         emailSubjectSender: editData.form.emailSubjectSender ?? "",
         emailTemplateSender: editData.form.emailTemplateSender ?? "",
+        emailEnabled: editData.form.emailEnabled !== false,
       }
     : DEFAULT_VALUES;
 

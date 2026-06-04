@@ -347,6 +347,7 @@ export interface CmsFormDefinition {
   emailSubjectReceiver?: string | null;
   emailTemplateSender?: string | null;
   emailSubjectSender?: string | null;
+  emailEnabled?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -833,6 +834,7 @@ export const cmsApi = {
     emailSubjectReceiver?: string | null;
     emailTemplateSender?: string | null;
     emailSubjectSender?: string | null;
+    emailEnabled?: boolean;
   }) =>
     api.post<{ success: boolean; form: CmsFormDefinition }>(
       `/api/v1/admin/projects/${projectSlug}/cms/forms`,
@@ -846,6 +848,7 @@ export const cmsApi = {
     emailSubjectReceiver?: string | null;
     emailTemplateSender?: string | null;
     emailSubjectSender?: string | null;
+    emailEnabled?: boolean;
   }) =>
     api.patch<{ success: boolean; form: CmsFormDefinition }>(
       `/api/v1/admin/projects/${projectSlug}/cms/forms/${formKey}`,

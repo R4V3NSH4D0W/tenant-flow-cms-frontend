@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { useCurrentProject } from "@/components/providers/current-project-provider";
 import { useMutation, useQuery, useQueryClient } from "@/lib/shared/react-query";
@@ -19,6 +20,7 @@ import {
   DialogTrigger,
   DialogDescription,
 } from "@/components/ui/dialog";
+import { AlertDialog } from "@/components/ui/alert-dialog";
 
 
 export default function FormsPage() {
@@ -30,6 +32,8 @@ export default function FormsPage() {
   const canManageProject = isAdmin || currentAccess?.canManageProject === true;
   const primaryDomain = currentProject?.primaryDomain ?? null;
 
+
+  const [formToDelete, setFormToDelete] = useState<{ key: string; name: string } | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ["cms-forms", slug],
@@ -47,12 +51,6 @@ export default function FormsPage() {
       toast.error(err.message || "Failed to delete form");
     },
   });
-
-  const handleDelete = (formKey: string, formName: string) => {
-    if (confirm(`Are you sure you want to delete the form "${formName}"? This will delete all its submissions too.`)) {
-      deleteForm.mutate(formKey);
-    }
-  };
 
   if (!slug) {
     return (
@@ -139,9 +137,15 @@ export default function FormsPage() {
                       {form.key}
                     </span>
                   </div>
-                  <CardDescription className="text-xs font-medium text-muted-foreground pt-1.5 flex items-center gap-1.5">
-                    <Settings2 className="size-3.5" /> {fieldsCount} {fieldsCount === 1 ? "field" : "fields"} configured
-                  </CardDescription>
+                  <div className="flex items-center gap-3 pt-1.5 text-xs text-muted-foreground font-medium">
+                    <span className="flex items-center gap-1">
+                      <Settings2 className="size-3.5 text-muted-foreground" /> {fieldsCount} {fieldsCount === 1 ? "field" : "fields"}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <span className={`h-1.5 w-1.5 rounded-full ${form.emailEnabled !== false ? "bg-emerald-500" : "bg-zinc-400"}`} />
+                      {form.emailEnabled !== false ? "Email active" : "Email disabled"}
+                    </span>
+                  </div>
                 </CardHeader>
 
                 <CardContent className="pt-2 pb-4 space-y-4">
@@ -167,7 +171,7 @@ export default function FormsPage() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => handleDelete(form.key, form.name)}
+                      onClick={() => setFormToDelete({ key: form.key, name: form.name })}
                       disabled={deleteForm.isPending}
                       className="h-8 px-2.5 text-rose-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/20"
                     >
@@ -180,6 +184,27 @@ export default function FormsPage() {
           })}
         </div>
       )}
+
+      <AlertDialog
+        open={!!formToDelete}
+        onOpenChange={(open) => {
+          if (!open) setFormToDelete(null);
+        }}
+        title="Delete Form Definition"
+        description={
+          <span>
+            Are you sure you want to delete the form <strong>{formToDelete?.name}</strong>? This action is irreversible and will delete all associated submissions too.
+          </span>
+        }
+        confirmLabel={deleteForm.isPending ? "Deleting..." : "Delete"}
+        cancelLabel="Cancel"
+        destructive
+        onConfirm={() => {
+          if (formToDelete) {
+            deleteForm.mutate(formToDelete.key);
+          }
+        }}
+      />
     </div>
   );
 }
