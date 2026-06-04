@@ -147,4 +147,45 @@ export const projectsApi = {
     api.delete<{ success: true }>(
       `/api/v1/admin/projects/${projectSlug}/members/${userId}`,
     ),
+  getSmtp: (projectSlug: string) =>
+    api.get<{
+      success: true;
+      smtp: {
+        smtpEmail: string | null;
+        smtpHost: string | null;
+        smtpPort: number | null;
+        hasPassword: boolean;
+      };
+    }>(`/api/v1/admin/projects/${projectSlug}/smtp`),
+  updateSmtp: (
+    projectSlug: string,
+    body: {
+      smtpEmail?: string | null;
+      smtpHost?: string | null;
+      smtpPort?: number | null;
+      smtpPassword?: string | null;
+    },
+  ) =>
+    api.patch<{
+      success: true;
+      smtp: {
+        smtpEmail: string | null;
+        smtpHost: string | null;
+        smtpPort: number | null;
+        hasPassword: boolean;
+      };
+    }>(`/api/v1/admin/projects/${projectSlug}/smtp`, body),
+  testSmtp: (
+    projectSlug: string,
+    body: {
+      smtpEmail?: string | null;
+      smtpHost?: string | null;
+      smtpPort?: number | null;
+      smtpPassword?: string | null;
+    },
+  ) =>
+    api.post<{ success: true; message: string }>(
+      `/api/v1/admin/projects/${projectSlug}/smtp/test`,
+      body,
+    ),
 };

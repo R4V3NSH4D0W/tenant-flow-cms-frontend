@@ -327,6 +327,38 @@ export type CmsPageUpdateBody = Partial<
   >
 >;
 
+
+// ─── Form types ───────────────────────────────────────────────────────────────
+
+export interface CmsFormField {
+  key: string;
+  label: string;
+  type: string;
+  required: boolean;
+  options?: string[];
+}
+
+export interface CmsFormDefinition {
+  id: string;
+  key: string;
+  name: string;
+  schema: CmsFormField[];
+  emailTemplateReceiver?: string | null;
+  emailSubjectReceiver?: string | null;
+  emailTemplateSender?: string | null;
+  emailSubjectSender?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CmsFormSubmission {
+  id: string;
+  formId: string;
+  payload: Record<string, unknown>;
+  createdAt: string;
+  updatedAt?: string;
+}
+
 export const cmsApi = {
   // Pages
   listPages: (projectSlug: string) =>
@@ -781,4 +813,57 @@ export const cmsApi = {
       headers: { "x-tenant-slug": projectSlug },
     });
   },
+
+  // Forms
+  listForms: (projectSlug: string) =>
+    api.get<{ success: boolean; forms: CmsFormDefinition[] }>(
+      `/api/v1/admin/projects/${projectSlug}/cms/forms`
+    ),
+
+  getForm: (projectSlug: string, formKey: string) =>
+    api.get<{ success: boolean; form: CmsFormDefinition }>(
+      `/api/v1/admin/projects/${projectSlug}/cms/forms/${formKey}`
+    ),
+
+  createForm: (projectSlug: string, data: {
+    key: string;
+    name: string;
+    schema: CmsFormField[];
+    emailTemplateReceiver?: string | null;
+    emailSubjectReceiver?: string | null;
+    emailTemplateSender?: string | null;
+    emailSubjectSender?: string | null;
+  }) =>
+    api.post<{ success: boolean; form: CmsFormDefinition }>(
+      `/api/v1/admin/projects/${projectSlug}/cms/forms`,
+      data
+    ),
+
+  updateForm: (projectSlug: string, formKey: string, data: {
+    name?: string;
+    schema?: CmsFormField[];
+    emailTemplateReceiver?: string | null;
+    emailSubjectReceiver?: string | null;
+    emailTemplateSender?: string | null;
+    emailSubjectSender?: string | null;
+  }) =>
+    api.patch<{ success: boolean; form: CmsFormDefinition }>(
+      `/api/v1/admin/projects/${projectSlug}/cms/forms/${formKey}`,
+      data
+    ),
+
+  deleteForm: (projectSlug: string, formKey: string) =>
+    api.delete<{ success: boolean }>(
+      `/api/v1/admin/projects/${projectSlug}/cms/forms/${formKey}`
+    ),
+
+  listSubmissions: (projectSlug: string, formKey: string) =>
+    api.get<{ success: boolean; submissions: CmsFormSubmission[]; form: CmsFormDefinition }>(
+      `/api/v1/admin/projects/${projectSlug}/cms/forms/${formKey}/submissions`
+    ),
+
+  deleteSubmission: (projectSlug: string, formKey: string, submissionId: string) =>
+    api.delete<{ success: boolean }>(
+      `/api/v1/admin/projects/${projectSlug}/cms/forms/${formKey}/submissions/${submissionId}`
+    ),
 };

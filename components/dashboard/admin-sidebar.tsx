@@ -18,6 +18,7 @@ import {
   ShieldCheck,
   Users,
   Settings,
+  ClipboardList,
   type LucideIcon,
 } from "lucide-react";
 
@@ -100,6 +101,11 @@ const cmsNav: NavItem[] = [
     href: "/dashboard/cms/announcements",
     label: "Announcements",
     icon: Megaphone,
+  },
+  {
+    href: "/dashboard/cms/forms",
+    label: "Forms",
+    icon: ClipboardList,
   },
   {
     href: "/dashboard/settings",
