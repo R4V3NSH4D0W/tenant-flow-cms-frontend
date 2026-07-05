@@ -2,6 +2,31 @@
 
 A beautiful, responsive, and feature-rich Next.js admin dashboard shell for the **Tenant Flow headless CMS**. It provides visual interfaces to manage multi-tenant projects, page structures, layouts, navigation chrome, form definitions, and media scope.
 
+> [!IMPORTANT]
+> This is a decoupled headless system. **To run this dashboard, you need the companion backend repository:**
+> 👉 **[Tenant Flow CMS Backend](https://github.com/R4V3NSH4D0W/tenant-flow-cms-backend)**
+
+---
+
+## Why Tenant Flow CMS Dashboard? (Benefits)
+
+This dashboard provides a premium workspace for managers and developers overseeing multi-tenant environments:
+
+1. **Fluid User Interface**: Built with Framer Motion, GSAP, and Tailwind CSS v4, the dashboard provides micro-animations, fast transitions, and a premium look-and-feel.
+2. **Dynamic Project Switching**: Switch workspace context instantly between completely different client projects with a single click.
+3. **No-Code Layout Editing**: Empower non-technical editors to build page schemas, add dynamic blocks, and reorder structural layout hierarchies visually.
+4. **Comprehensive Data View**: Complete visual tooling for custom collections, database-driven forms, email notification triggers, and API access keys.
+
+---
+
+## What It Can Handle (Use Cases & Scale)
+
+* **Multi-Tenant SaaS Portals**: A single admin hub to manage hundreds of distinct tenant portals.
+* **Component-Based Content Builders**: Define visual layout schemas (dynamic blocks) that match your storefront components.
+* **Form Submission Tracking**: Review structured user contact inputs, search messages, and download response data.
+* **Granular Project Scoping**: Grant specific user roles, revoke permissions, and create read/write API credentials.
+* **Media Asset Control**: Visual library management for project images, logos, and gallery media.
+
 ---
 
 ## Multi-Tenant Architecture
