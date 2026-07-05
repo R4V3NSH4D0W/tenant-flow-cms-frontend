@@ -50,6 +50,10 @@ graph TD
 
 Here is a visual overview of the dashboard interface:
 
+### Project List (Main Dashboard)
+![Project List](assets/project_SC/projects_Lists_admin_dashboard.jpeg)
+*Manage all tenant projects from a centralized console*
+
 | Page Builder | Layout Structures |
 | :---: | :---: |
 | ![Page Builder](assets/project_SC/page_builder.jpeg) | ![Layout Design](assets/project_SC/creating_layout_2_structure_tre.jpeg) |
