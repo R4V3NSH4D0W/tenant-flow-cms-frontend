@@ -157,3 +157,9 @@ Open [http://localhost:3000](http://localhost:3000) to view the application. Go 
 | `pnpm db:seed` | Seeds default settings and test admin credentials. |
 | `pnpm db:studio` | Opens the Prisma Studio database manager interface. |
 | `pnpm dev` | Starts the local Next.js development server. |
+
+---
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
