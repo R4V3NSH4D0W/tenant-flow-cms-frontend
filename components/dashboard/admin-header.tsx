@@ -274,7 +274,7 @@ export function AdminHeader({
                     asChild
                     className="rounded-md focus:bg-primary/5 focus:text-primary transition-colors"
                   >
-                    <Link
+                    <a
                       href={`/dashboard/projects/select?slug=${encodeURIComponent(project.slug)}&redirect=/dashboard`}
                       className="flex items-center justify-between w-full"
                     >
@@ -282,7 +282,7 @@ export function AdminHeader({
                       {currentProject?.id === project.id && (
                         <div className="size-1.5 rounded-full bg-primary" />
                       )}
-                    </Link>
+                    </a>
                   </DropdownMenuItem>
                 ))}
                 {isAdmin && (
