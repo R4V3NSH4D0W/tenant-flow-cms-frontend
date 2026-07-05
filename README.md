@@ -106,4 +106,4 @@ So: Register is **optional** if you already seeded (or created a user another wa
 - Set `DATABASE_URL` to your managed Postgres URL (the database must exist there too).
 - Run `pnpm db:deploy` during deploy.
 - Do **not** rely on seed credentials; create a real admin user or use your identity provider.
-# nextjs-json-cms
+# tenant-flow-cms-frontend
