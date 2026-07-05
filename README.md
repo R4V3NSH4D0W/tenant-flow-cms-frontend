@@ -46,15 +46,34 @@ graph TD
 
 ---
 
-## Features
+## Visual Dashboard Overview
 
-* **Multi-Project CMS Dashboard**: Switch seamlessly between distinct projects/tenants.
-* **Visual Page & Layout Builder**: Design layouts and configure dynamic pages with structured content blocks.
-* **Dynamic Collections**: Manage collections of structured data (e.g. blog posts, products) using customizable schemas.
-* **Forms & Submissions**: View form submission statistics, download response payload databases, and trigger SMTP alerts.
-* **Media Gallery**: Integrated drag-and-drop media upload and library scoping.
-* **API Access Management**: Create and revoke project-level API tokens and configure custom domain rules.
-* **Interactive UI**: Built with framer-motion, GSAP, Radix UI primitives, and Tailwind CSS v4.
+The dashboard shell exposes the following interactive management pages under `/dashboard`:
+
+### 📁 CMS Management (`/dashboard/cms`)
+* **Pages (`/pages`)** — Hierarchical listing of all configured site pages. Displays published status, allows scheduling, editing metadata (SEO), and content layout modifications.
+* **Layouts (`/layouts`)** — Structural template editors mapping component configuration slots (using `cms-layout-slots-editor`).
+* **Collections (`/collections` & `/collection`)** — Visual database editor. Define a key-value schema (e.g. `blog_posts` with `title: string`, `body: rich-text`, `author: string`) and write new items inside a clean spreadsheet-like editor.
+* **Forms (`/forms`)** — Lists submissions sent from your public websites. Review submissions, create new form schemas, and set custom SMTP auto-response templates.
+* **Dynamic Routes (`/dynamic-routes`)** — Setup pattern-matched routing pathways (e.g. `/blog/:slug` maps to collection key `blog_posts` inside a dynamic layout).
+* **Tools (`/tools`)** — Export/import layout components and block definitions.
+* **Site Chrome (`/navigation`, `/footer`, `/announcements`)** — Visually design header navigation trees, footer links, and marketing alert messages.
+
+### 🖼 Media Library (`/dashboard/media`)
+* Drag-and-drop file uploaders (`cms-file-upload-field`) built over scoped folders.
+* Handles images, SVG icons, and trash recovery.
+
+### ⚙ Settings (`/dashboard/settings` & `/dashboard/projects`)
+* Manage global settings, register API keys, specify allowed domain origins, and assign user access roles (Project Manager vs. Member).
+
+---
+
+## Technical Component Overview
+
+* **Layout Blocks Editor** (`components/cms/layout-builder/`) — Uses a nested visual tree structure (`block-branch.tsx` & `leaf-default-field.tsx`) to let editors nest widgets within visual parent layout modules.
+* **TipTap WYSIWYG Editor** (`cms-html-description-editor.tsx`) — Full-featured rich-text editing engine compiling inline hyperlinks, font styling, and colors directly to sanitized HTML payloads.
+* **React Query State Caching** — Utilizes `@tanstack/react-query` to cache project configurations, routes, and page lists.
+* **Lucide Icon Pack & Framer Motion** — Drives consistent modern animations and icon designs throughout the admin layout.
 
 ---
 
