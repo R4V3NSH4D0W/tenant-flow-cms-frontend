@@ -57,6 +57,9 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   // Prisma / pg / bcrypt now live in the Hono backend only
   serverExternalPackages: ["pino", "pino-pretty"],
+  experimental: {
+    middlewareClientMaxBodySize: "100mb",
+  },
   async rewrites() {
     return [
       {
