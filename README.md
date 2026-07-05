@@ -1,6 +1,6 @@
 # Tenant Flow CMS Frontend
 
-A beautiful, responsive, and feature-rich Next.js admin dashboard shell for the **Tenant Flow headless CMS**. It provides visual interfaces to manage multi-tenant projects, page structures, layouts, navigation chrome, form definitions, and media scope.
+A Next.js admin dashboard for the **Tenant Flow headless CMS**. It provides visual interfaces to manage multi-tenant projects, page structures, layouts, navigation configs, form definitions, and media scope.
 
 > [!IMPORTANT]
 > This is a decoupled headless system. **To run this dashboard, you need the companion backend repository:**
@@ -10,12 +10,12 @@ A beautiful, responsive, and feature-rich Next.js admin dashboard shell for the 
 
 ## Why Tenant Flow CMS Dashboard? (Benefits)
 
-This dashboard provides a premium workspace for managers and developers overseeing multi-tenant environments:
+This dashboard provides workspace configuration views for managers and developers overseeing multi-tenant environments:
 
-1. **Fluid User Interface**: Built with Framer Motion, GSAP, and Tailwind CSS v4, the dashboard provides micro-animations, fast transitions, and a premium look-and-feel.
-2. **Dynamic Project Switching**: Switch workspace context instantly between completely different client projects with a single click.
-3. **No-Code Layout Editing**: Empower non-technical editors to build page schemas, add dynamic blocks, and reorder structural layout hierarchies visually.
-4. **Comprehensive Data View**: Complete visual tooling for custom collections, database-driven forms, email notification triggers, and API access keys.
+1. **Modern Interface**: Built with Framer Motion, GSAP, and Tailwind CSS v4 for UI layout transitions.
+2. **Dynamic Project Switching**: Switch workspace context between project databases.
+3. **Layout Editing**: Build page schemas, add dynamic blocks, and reorder structural layout hierarchies visually.
+4. **Data Tools**: Admin panels for custom collections, database-driven forms, email notification triggers, and API access keys.
 
 ---
 
