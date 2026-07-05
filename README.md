@@ -46,6 +46,27 @@ graph TD
 
 ---
 
+## Dashboard Preview
+
+Here is a visual overview of the dashboard interface:
+
+| Page Builder | Layout Structures |
+| :---: | :---: |
+| ![Page Builder](assets/project_SC/page_builder.jpeg) | ![Layout Design](assets/project_SC/creating_layout_2_structure_tre.jpeg) |
+| *Visual editor with drag-and-drop blocks* | *Defining nested component structures* |
+
+| Collections Manager | Layout Profiles |
+| :---: | :---: |
+| ![Collection List](assets/project_SC/collection_list.jpeg) | ![All Layouts](assets/project_SC/all_layout.jpeg) |
+| *Define structured database schemas* | *Visual list of layout wireframes* |
+
+| Creating Layouts | Collection Item Editor |
+| :---: | :---: |
+| ![Creating Layout](assets/project_SC/creating_layout_.jpeg) | ![Adding Collection Item](assets/project_SC/adding_item_in_created_collection.jpeg) |
+| *Registering new template structures* | *Inserting data entries into collection schemas* |
+
+---
+
 ## Visual Dashboard Overview
 
 The dashboard shell exposes the following interactive management pages under `/dashboard`:
