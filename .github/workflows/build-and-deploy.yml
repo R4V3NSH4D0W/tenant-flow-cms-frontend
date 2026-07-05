@@ -58,8 +58,8 @@ jobs:
           build-args: |
             NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL || 'http://localhost:4000' }}
           tags: |
-            lenishmagar/tenant-flow-cms-frontend:latest
-            lenishmagar/tenant-flow-cms-frontend:${{ github.sha }}
+            lenishmagar/tenent-flow-cms-frontend:latest
+            lenishmagar/tenent-flow-cms-frontend:${{ github.sha }}
 
   deploy:
     runs-on: ubuntu-latest
@@ -70,7 +70,7 @@ jobs:
       - name: Deploy container to VPS
         uses: appleboy/ssh-action@v1.0.3
         env:
-          FRONTEND_IMAGE: lenishmagar/tenant-flow-cms-frontend:latest
+          FRONTEND_IMAGE: lenishmagar/tenent-flow-cms-frontend:latest
           NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL }}
           APP_URL: ${{ vars.APP_URL || 'https://cmsdashboard.devfy.codes' }}
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
